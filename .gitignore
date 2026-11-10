@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Data: keep folders, never commit footage or generated data
+data/**/*
+!data/**/
+!data/**/.gitkeep
+*.mp4
+*.mov
+*.avi
+*.parquet
+*.duckdb
+
+# Models downloaded at runtime
+models/
+*.task
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.env
