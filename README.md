@@ -3,3 +3,37 @@ Video-to-analytics pipeline for bouldering: pose keypoints, climbing metrics, an
 Project Boulder turns raw climbing footage into reliable, queryable data about how a climber moves. Videos of bouldering attempts are ingested with metadata (grade, wall angle, sent or fell), run through pose estimation, and stored as keypoint time series. Transformations compute movement metrics such as arm bend, foot readjustments, hesitation time and hip-path smoothness, and data-quality checks flag low-confidence frames. The output is a feedback video with a skeleton overlay that highlights inefficient moves.
 
 Roadmap: v1 single camera + rule-based metrics → v2 multi-angle 3D reconstruction → v3 learned models and physics simulation.
+
+## Project structure
+
+```
+project-bouldering/
+├── src/boulder/          # the Python package, one module per pipeline stage
+│   ├── ingest/           # raw videos + attempt metadata in
+│   ├── pose/             # pose estimation -> keypoint time series
+│   ├── transforms/       # movement metrics
+│   ├── quality/          # data-quality checks
+│   ├── render/           # skeleton-overlay feedback videos
+│   └── pipeline/         # orchestration
+├── data/                 # local only, never committed
+│   ├── raw/              # tripod footage
+│   ├── test/             # handheld / test clips
+│   ├── processed/        # keypoints and metrics (Parquet)
+│   └── output/           # rendered feedback videos
+├── metadata/             # attempt log template
+├── notebooks/            # exploration
+├── tests/
+└── docs/decisions.md     # decision log
+```
+
+## Setup
+
+Requires Python 3.11 or 3.12 (MediaPipe can lag behind the newest Python release).
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+pytest
+```

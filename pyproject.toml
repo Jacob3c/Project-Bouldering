@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boulder"
+version = "0.1.0"
+description = "Video-to-analytics pipeline for bouldering: pose keypoints, climbing metrics, and skeleton-overlay feedback."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mediapipe",       # pose estimation
+    "opencv-python",   # video I/O and overlay drawing
+    "numpy",
+    "pandas",
+    "pyarrow",         # Parquet storage
+    "duckdb",          # local SQL over Parquet
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "jupyterlab",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
