@@ -5,7 +5,7 @@ Usage:
     python -m boulder.render.overlay data/test/clip.MOV --models mediapipe rtmpose-feet
     python -m boulder.render.overlay data/test/clip.MOV --conf 0.3 --scale 0.5
 
-Reads keypoints from data/processed/keypoints/model=<name>/<video_id>.parquet
+Reads keypoints from data/processed/keypoints/camera=*/model=<name>/<video_id>.parquet
 (run boulder.pose.run first) and writes data/output/<video_id>_overlay.mp4.
 
 Each model gets its own colour. Joints below --conf are not drawn, so gaps in
@@ -169,10 +169,11 @@ def main() -> None:
     stem = args.video.stem
     model_poses = {}
     for model in args.models:
-        path = args.root / f"model={model}" / f"{stem}.parquet"
-        if not path.exists():
-            parser.error(f"no keypoints for {model}: {path} (run boulder.pose.run first)")
-        model_poses[model] = poses_by_frame(pd.read_parquet(path))
+        matches = sorted(args.root.glob(f"camera=*/model={model}/{stem}.parquet"))
+        if not matches:
+            parser.error(f"no keypoints for {model} / {stem} under {args.root} "
+                         "(run boulder.pose.run first)")
+        model_poses[model] = poses_by_frame(pd.read_parquet(matches[0]))
 
     out = args.out or OUTPUT_DIR / f"{stem}_overlay.mp4"
     render(args.video, model_poses, out, args.conf, args.scale)
