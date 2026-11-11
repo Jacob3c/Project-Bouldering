@@ -37,3 +37,14 @@ python -m pip install --upgrade pip
 pip install -e ".[dev]"
 pytest
 ```
+
+## Pose extraction
+
+Two interchangeable models produce the same output table, so they can be compared on the same clips:
+
+```bash
+python -m boulder.pose.run data/test/clip.mp4 --model both   # MediaPipe + RTMPose
+python -m boulder.pose.compare                               # per-joint agreement
+```
+
+Keypoints land in `data/processed/keypoints/model=<name>/<video_id>.parquet`, one row per frame per joint.
