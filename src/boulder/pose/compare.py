@@ -3,6 +3,7 @@
 Usage:
     python -m boulder.pose.compare                                  # mediapipe vs rtmpose
     python -m boulder.pose.compare --a mediapipe --b rtmpose-feet   # any two model folders
+    python -m boulder.pose.compare --camera tripod                  # tripod clips only
 
 Only joints both models output (same name) are compared.
 
@@ -25,9 +26,9 @@ import duckdb
 
 QUERY = """
 WITH a AS (
-    SELECT * FROM read_parquet('{root}/model={a}/*.parquet')
+    SELECT * FROM read_parquet('{root}/camera={camera}/model={a}/*.parquet')
 ), b AS (
-    SELECT * FROM read_parquet('{root}/model={b}/*.parquet')
+    SELECT * FROM read_parquet('{root}/camera={camera}/model={b}/*.parquet')
 ), both_models AS (
     SELECT
         a.keypoint,
@@ -55,9 +56,12 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path("data/processed/keypoints"))
     parser.add_argument("--a", default="mediapipe", help="first model folder name")
     parser.add_argument("--b", default="rtmpose", help="second model folder name")
+    parser.add_argument("--camera", choices=["handheld", "tripod", "unknown", "all"],
+                        default="all", help="which footage to include")
     args = parser.parse_args()
-    print(f"a = {args.a}   b = {args.b}")
-    print(duckdb.sql(QUERY.format(root=args.root.as_posix(), a=args.a, b=args.b)))
+    camera = "*" if args.camera == "all" else args.camera
+    print(f"a = {args.a}   b = {args.b}   camera = {args.camera}")
+    print(duckdb.sql(QUERY.format(root=args.root.as_posix(), a=args.a, b=args.b, camera=camera)))
 
 
 if __name__ == "__main__":
