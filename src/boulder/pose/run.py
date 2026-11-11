@@ -5,10 +5,12 @@ Usage:
     python -m boulder.pose.run data/test/clip.mp4 --model rtmpose
     python -m boulder.pose.run data/test/clip.mp4 --model both       # compare
     python -m boulder.pose.run data/test/*.mp4 --model both --stride 2
+    python -m boulder.pose.run data/test/clip.mp4 --model rtmpose --skeleton body_with_feet
 
 Output layout (one file per video per model, "Hive-partitioned" by model):
     data/processed/keypoints/model=mediapipe/<video_id>.parquet
-    data/processed/keypoints/model=rtmpose/<video_id>.parquet
+    data/processed/keypoints/model=rtmpose/<video_id>.parquet        (17 joints)
+    data/processed/keypoints/model=rtmpose-feet/<video_id>.parquet   (26 joints, with toes/heels)
 """
 
 from __future__ import annotations
@@ -64,16 +66,26 @@ def extract_keypoints(video_path: Path, backend: PoseBackend, stride: int = 1) -
     return pd.DataFrame(rows, columns=SCHEMA_COLUMNS)
 
 
-def run(video_path: Path, model: str, out_dir: Path = DEFAULT_OUT, stride: int = 1) -> Path:
+def output_label(model: str, skeleton: str = "body") -> str:
+    """Folder name for a model run: rtmpose with feet gets its own folder."""
+    if model == "rtmpose" and skeleton == "body_with_feet":
+        return "rtmpose-feet"
+    return model
+
+
+def run(video_path: Path, model: str, out_dir: Path = DEFAULT_OUT, stride: int = 1,
+        skeleton: str = "body", rtm_mode: str = "balanced") -> Path:
     start = time.perf_counter()
-    with make_backend(model) as backend:
+    kwargs = {"skeleton": skeleton, "mode": rtm_mode} if model == "rtmpose" else {}
+    with make_backend(model, **kwargs) as backend:
         df = extract_keypoints(video_path, backend, stride=stride)
-    out_path = Path(out_dir) / f"model={model}" / f"{Path(video_path).stem}.parquet"
+    label = output_label(model, skeleton)
+    out_path = Path(out_dir) / f"model={label}" / f"{Path(video_path).stem}.parquet"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_path, index=False)
     frames = df["frame_idx"].nunique()
     secs = time.perf_counter() - start
-    print(f"[{model}] {Path(video_path).name}: {frames} frames with a person, "
+    print(f"[{label}] {Path(video_path).name}: {frames} frames with a person, "
           f"{len(df)} rows, {secs:.1f}s -> {out_path}")
     return out_path
 
@@ -84,13 +96,17 @@ def main() -> None:
     parser.add_argument("videos", nargs="+", type=Path)
     parser.add_argument("--model", choices=["mediapipe", "rtmpose", "both"], default="mediapipe")
     parser.add_argument("--stride", type=int, default=1, help="process every Nth frame")
+    parser.add_argument("--skeleton", choices=["body", "body_with_feet"], default="body",
+                        help="RTMPose only: 17 joints, or 26 incl. toes and heels")
+    parser.add_argument("--rtm-mode", choices=["lightweight", "balanced", "performance"],
+                        default="balanced", help="RTMPose only: speed vs accuracy")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args()
 
     models = ["mediapipe", "rtmpose"] if args.model == "both" else [args.model]
     for video in args.videos:
         for model in models:
-            run(video, model, args.out, args.stride)
+            run(video, model, args.out, args.stride, args.skeleton, args.rtm_mode)
 
 
 if __name__ == "__main__":

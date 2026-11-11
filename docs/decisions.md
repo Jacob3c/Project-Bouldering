@@ -11,3 +11,10 @@ Short entries: what was decided, why, and what else was considered.
 - **Why:** lets the models be compared on the same clips and the pipeline be rerun when the model changes, without touching downstream code.
 - **Considered:** YOLO-pose (ankle-only feet, AGPL licence).
 - **Open:** pick the default model after comparing both on test clips.
+
+## 2026-11-10 - First model comparison (1 handheld clip, 668 frames)
+- Both models found the climber in every frame; most joints agree within 5-10 px on a 1080x1920 frame.
+- RTMPose confident on elbows/wrists far more often (e.g. left elbow 96% vs 60%), with positions still close, so MediaPipe is often right but unsure.
+- MediaPipe reports eyes/nose visible in 100% of frames while the climber faces the wall: its confidence looks unreliable for filtering.
+- RTMPose about 5x slower (about 4 min vs 44.5 s); acceptable for batch processing.
+- **Leaning:** RTMPose with feet (26 joints). **Next:** check overlays by eye and repeat on 3-5 clips before deciding.
