@@ -9,7 +9,9 @@ description = "Video-to-analytics pipeline for bouldering: pose keypoints, climb
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mediapipe",       # pose estimation
+    "mediapipe",       # pose estimation (model 1)
+    "rtmlib",          # RTMPose without the MMPose dependency chain (model 2)
+    "onnxruntime",     # runs the RTMPose model files
     "opencv-python",   # video I/O and overlay drawing
     "numpy",
     "pandas",
