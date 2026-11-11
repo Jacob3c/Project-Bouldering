@@ -37,3 +37,9 @@ Short entries: what was decided, why, and what else was considered.
 - MediaPipe lost the climber in about 24 frames on one clip where RTMPose-feet did not.
 - **Cost:** about 4-6x slower (108-204 s vs 23-41 s per clip at stride 2 on an M-series MacBook Air CPU); acceptable for batch processing.
 - **Caveats:** handheld footage only; confidence scales differ between models. **Revisit** with tripod clips and after checking overlays by eye.
+
+## 2026-11-11 - First metric definitions
+- **Decision:** scale all distances by the clip's median torso length (shoulder midpoint to hip midpoint); compute straight-arm share, foot moves/readjustments, pauses, hip-path efficiency and jerk from smoothed keypoints.
+- **Why:** angles are distance-independent and torso length cancels camera distance, so handheld and tripod clips at different distances can be compared.
+- **Known limits:** angles are 2D projections (an arm pointing at the camera looks bent); straight-arm share counts all frames, not only frames on a hold; thresholds are first guesses.
+- **Next:** calibrate thresholds by comparing sends and falls on the same problems with tripod footage; store each run's `MetricConfig` with the results so reruns are traceable.
