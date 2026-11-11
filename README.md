@@ -52,3 +52,22 @@ RTMPose can also output 26 joints including toes and heels: add `--model rtmpose
 (saved as `model=rtmpose-feet`), then compare with `--a mediapipe --b rtmpose-feet`.
 
 Keypoints land in `data/processed/keypoints/camera=<handheld|tripod>/model=<name>/<video_id>.parquet`, one row per frame per joint. The camera comes from the file name's last word (`..._tripod.MOV`). Add `--skip-existing` to process only new clips, and `--camera tripod` to `compare` to filter footage.
+
+## Climbing metrics
+
+```bash
+python -m boulder.transforms.run                    # all clips with rtmpose-feet keypoints
+python -m boulder.transforms.run --camera tripod --skip-existing
+```
+
+Writes a per-frame table and a one-row-per-attempt summary to `data/processed/metrics/{frames,attempts}/camera=<c>/model=<m>/`. Attempt metadata (date, gym, grade, attempt, outcome, camera) is parsed from the clip's file name.
+
+| Metric | Meaning |
+| --- | --- |
+| `arms_straight_share` | Share of frames with elbow angle >= 150 degrees |
+| `foot_moves`, `foot_readjustments` | Foot movements; a move under 0.3 torso lengths counts as a readjustment |
+| `pauses`, `pause_total_s` | Hip still (< 0.15 torso lengths/s) for at least 1 s |
+| `hip_path_efficiency` | Straight-line hip displacement / hip path length (1 = perfectly direct) |
+| `hip_mean_jerk` | Mean jerk of the hip path; lower = smoother |
+
+Distances are in torso lengths (shoulder midpoint to hip midpoint), so clips filmed from different distances are comparable. Thresholds are in `MetricConfig` and are stored with every attempt row.
