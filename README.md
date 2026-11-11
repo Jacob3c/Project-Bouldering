@@ -51,4 +51,4 @@ python -m boulder.render.overlay data/test/clip.mp4          # both skeletons dr
 RTMPose can also output 26 joints including toes and heels: add `--model rtmpose --skeleton body_with_feet`
 (saved as `model=rtmpose-feet`), then compare with `--a mediapipe --b rtmpose-feet`.
 
-Keypoints land in `data/processed/keypoints/model=<name>/<video_id>.parquet`, one row per frame per joint.
+Keypoints land in `data/processed/keypoints/camera=<handheld|tripod>/model=<name>/<video_id>.parquet`, one row per frame per joint. The camera comes from the file name's last word (`..._tripod.MOV`). Add `--skip-existing` to process only new clips, and `--camera tripod` to `compare` to filter footage.

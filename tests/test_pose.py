@@ -1,5 +1,7 @@
 """Pose module tests that need no real model: a fake backend stands in."""
 
+from pathlib import Path
+
 import cv2
 import numpy as np
 
@@ -50,3 +52,29 @@ def test_pick_main_person_chooses_largest_skeleton():
 
 def test_pick_main_person_none_when_empty():
     assert pick_main_person(np.empty((0, 17, 2)), np.empty((0, 17))) is None
+
+
+def test_camera_from_name():
+    from boulder.pose.run import camera_from_name
+
+    assert camera_from_name("2026-11-08_Gym_Orange-V5_att01_send_handheld.MOV") == "handheld"
+    assert camera_from_name("2026-11-12_Gym_Blue-V3_att01_send_TRIPOD.mov") == "tripod"
+    assert camera_from_name("clip.mp4") == "unknown"
+
+
+def test_output_path_partitions_by_camera_then_model(tmp_path):
+    from boulder.pose.run import output_path
+
+    p = output_path("x_send_tripod.MOV", "rtmpose-feet", tmp_path)
+    assert p == tmp_path / "camera=tripod" / "model=rtmpose-feet" / "x_send_tripod.parquet"
+
+
+def test_skip_existing_does_not_load_model(tmp_path, monkeypatch):
+    import boulder.pose.run as run_mod
+
+    out = run_mod.output_path("a_handheld.MOV", "mediapipe", tmp_path)
+    out.parent.mkdir(parents=True)
+    out.touch()
+    monkeypatch.setattr(run_mod, "make_backend",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("model loaded")))
+    assert run_mod.run(Path("a_handheld.MOV"), "mediapipe", tmp_path, skip_existing=True) is None
