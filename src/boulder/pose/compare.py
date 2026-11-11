@@ -1,8 +1,8 @@
 """Compare MediaPipe and RTMPose on the same video(s).
 
 Usage:
-    python -m boulder.pose.compare                                  # mediapipe vs rtmpose
-    python -m boulder.pose.compare --a mediapipe --b rtmpose-feet   # any two model folders
+    python -m boulder.pose.compare                                  # mediapipe vs rtmpose-feet
+    python -m boulder.pose.compare --a rtmpose --b rtmpose-feet     # any two model folders
     python -m boulder.pose.compare --camera tripod                  # tripod clips only
 
 Only joints both models output (same name) are compared.
@@ -55,7 +55,7 @@ def main() -> None:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", type=Path, default=Path("data/processed/keypoints"))
     parser.add_argument("--a", default="mediapipe", help="first model folder name")
-    parser.add_argument("--b", default="rtmpose", help="second model folder name")
+    parser.add_argument("--b", default="rtmpose-feet", help="second model folder name")
     parser.add_argument("--camera", choices=["handheld", "tripod", "unknown", "all"],
                         default="all", help="which footage to include")
     args = parser.parse_args()

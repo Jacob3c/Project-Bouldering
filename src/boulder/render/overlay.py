@@ -1,7 +1,7 @@
 """Draw pose skeletons from one or more models on top of the original video.
 
 Usage:
-    python -m boulder.render.overlay data/test/clip.MOV
+    python -m boulder.render.overlay data/test/clip.MOV                          # RTMPose-feet
     python -m boulder.render.overlay data/test/clip.MOV --models mediapipe rtmpose-feet
     python -m boulder.render.overlay data/test/clip.MOV --conf 0.3 --scale 0.5
 
@@ -156,7 +156,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("video", type=Path)
-    parser.add_argument("--models", nargs="+", default=["mediapipe", "rtmpose"],
+    parser.add_argument("--models", nargs="+", default=["rtmpose-feet"],
                         help="model folder names under data/processed/keypoints")
     parser.add_argument("--conf", type=float, default=0.5,
                         help="hide joints below this confidence")

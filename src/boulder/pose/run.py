@@ -1,12 +1,13 @@
 """Run a pose model over a video and save the keypoints as Parquet.
 
+Default model: RTMPose with feet (26 joints). See docs/decisions.md for why.
+
 Usage:
-    python -m boulder.pose.run data/test/clip.mp4                    # MediaPipe
-    python -m boulder.pose.run data/test/clip.mp4 --model rtmpose
-    python -m boulder.pose.run data/test/clip.mp4 --model both       # compare
-    python -m boulder.pose.run data/test/*.mp4 --model both --stride 2
-    python -m boulder.pose.run data/test/clip.mp4 --model rtmpose --skeleton body_with_feet
-    python -m boulder.pose.run data/raw/*.MOV --skip-existing        # only new clips
+    python -m boulder.pose.run data/test/clip.mp4                    # RTMPose-feet (default)
+    python -m boulder.pose.run data/raw/*.MOV --stride 2 --skip-existing   # only new clips
+    python -m boulder.pose.run data/test/clip.mp4 --model mediapipe
+    python -m boulder.pose.run data/test/clip.mp4 --skeleton body    # RTMPose, 17 joints
+    python -m boulder.pose.run data/test/*.mp4 --model both          # compare models
 
 Output layout ("Hive-partitioned" by camera, then model):
     data/processed/keypoints/camera=<camera>/model=<model>/<video_id>.parquet
@@ -113,9 +114,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("videos", nargs="+", type=Path)
-    parser.add_argument("--model", choices=["mediapipe", "rtmpose", "both"], default="mediapipe")
+    parser.add_argument("--model", choices=["mediapipe", "rtmpose", "both"], default="rtmpose")
     parser.add_argument("--stride", type=int, default=1, help="process every Nth frame")
-    parser.add_argument("--skeleton", choices=["body", "body_with_feet"], default="body",
+    parser.add_argument("--skeleton", choices=["body", "body_with_feet"], default="body_with_feet",
                         help="RTMPose only: 17 joints, or 26 incl. toes and heels")
     parser.add_argument("--rtm-mode", choices=["lightweight", "balanced", "performance"],
                         default="balanced", help="RTMPose only: speed vs accuracy")

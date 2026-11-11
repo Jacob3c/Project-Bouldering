@@ -40,7 +40,7 @@ pytest
 
 ## Pose extraction
 
-Two interchangeable models produce the same output table, so they can be compared on the same clips:
+Default model is RTMPose with feet (26 joints; see `docs/decisions.md`). MediaPipe produces the same output table, so the two can be compared on the same clips:
 
 ```bash
 python -m boulder.pose.run data/test/clip.mp4 --model both   # MediaPipe + RTMPose
