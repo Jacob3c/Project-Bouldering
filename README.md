@@ -38,6 +38,27 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Ingest
+
+Every clip enters the pipeline through ingest, which checks the file name, copies the clip to
+`data/raw/` under its canonical name and records it in `data/manifest.parquet`:
+
+```bash
+python -m boulder.ingest.run data/test --dry-run   # report what would happen
+python -m boulder.ingest.run data/test             # copy + record new clips
+```
+
+- Names are normalized: `2026-1-19_abp_orange-v3_att1_send_handheld.MOV` becomes
+  `2026-01-19_ABP_Orange-V3_att01_send_handheld.mov`. Official gym, colour and wall-style names
+  live in `configs/aliases.yaml`.
+- Names with an unknown gym or colour, a bad grade or a wrong pattern are **rejected** and not copied.
+- A clip whose bytes (SHA-256) are already in the manifest is a **duplicate** and is skipped, even
+  under another name. Rerunning ingest changes nothing.
+- The manifest holds one row per clip: `clip_id`, parsed name fields, `source_name`, `raw_path`,
+  `sha256`, `size_bytes`, `fps`, `n_frames`, `width`, `height`, `duration_s`, `ingested_at`.
+
+Then run pose on the ingested clips: `python -m boulder.pose.run data/raw/*.mov --skip-existing`.
+
 ## Pose extraction
 
 Default model is RTMPose with feet (26 joints; see `docs/decisions.md`). MediaPipe produces the same output table, so the two can be compared on the same clips:

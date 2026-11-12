@@ -43,3 +43,10 @@ Short entries: what was decided, why, and what else was considered.
 - **Why:** angles are distance-independent and torso length cancels camera distance, so handheld and tripod clips at different distances can be compared.
 - **Known limits:** angles are 2D projections (an arm pointing at the camera looks bent); straight-arm share counts all frames, not only frames on a hold; thresholds are first guesses.
 - **Next:** calibrate thresholds by comparing sends and falls on the same problems with tripod footage; store each run's `MetricConfig` with the results so reruns are traceable.
+
+## 2026-11-11 - Ingest stage and manifest
+- **Decision:** `boulder.ingest.run` is the single entry point for clips. It normalizes the name (date, gym, colour, grade), copies the clip to `data/raw/<canonical_id><ext>` and appends a row to `data/manifest.parquet`. Pose and later stages read only from `data/raw/`.
+- **Why:** the same clip was processed twice (`2026-1-19_...` and `2026-01-19_...`). Cleaning names once at the boundary means downstream stages need no changes and can trust their input.
+- **Rules:** bad or unknown names are rejected (not copied); a SHA-256 match with the manifest marks a duplicate; the same ID with different bytes is an `id_conflict`; reruns are no-ops. Originals are copied, never moved. The manifest is written to a temp file and renamed, so a crash cannot corrupt it.
+- **Considered:** fixing IDs inside each stage (more code to keep in step); moving files instead of copying (risks losing originals while the pipeline is young).
+- **Next:** join the attempts log (`metadata/`) for wall angle, wall style and fall move; rerun pose on `data/raw/` and drop the duplicate keypoint file.
