@@ -95,6 +95,24 @@ RTMPose can also output 26 joints including toes and heels: add `--model rtmpose
 
 Keypoints land in `data/processed/keypoints/camera=<handheld|tripod>/model=<name>/<video_id>.parquet`, one row per frame per joint. The camera comes from the file name's last word (`..._tripod.MOV`). Add `--skip-existing` to process only new clips, and `--camera tripod` to `compare` to filter footage.
 
+## Quality checks
+
+```bash
+python -m boulder.quality.profile   # read-only report: gaps, confidence, jumps per joint
+python -m boulder.quality.run       # flag bad frames/points, pass/warn/fail per clip
+```
+
+| Level | Check | Default | Effect |
+| --- | --- | --- | --- |
+| frame | hip midpoint far from the climber's last good position (passer-by, camera jerk) | > 1.5 torso lengths | frame `valid = False` until the skeleton returns (or 2 s pass) |
+| point | confidence too low | < 0.5 | `point_ok = False` |
+| point | joint far from its 5-frame rolling median, relative to the hips | > 1.0 torso length | `point_ok = False` |
+| clip | climber small in frame / points out of frame / detection gap / handheld | torso < 100 px / > 1% / > 0.5 s / camera tag | warning |
+| clip | too many invalid frames | > 20% | fail |
+
+Writes `data/processed/quality/points/...` (keypoints + `point_ok` + `valid`) and
+`data/processed/quality/clips/...` (status, reasons, config used). Thresholds live in `QualityConfig`.
+
 ## Climbing metrics
 
 ```bash
