@@ -1,0 +1,34 @@
+# Official names and the spellings that should map to them.
+# Matching ignores case, spaces, hyphens and underscores, so "Main-Rec",
+# "mainrec" and "MAIN_REC" all match "MainRec" without being listed.
+# List only spellings that differ in letters (e.g. Grey vs Gray).
+#
+# Format:
+#   OfficialName: [variant, variant]
+
+gyms:
+  ABP: []
+  MainRec: []
+  SouthSide: []
+  Stone_CO: []
+
+colours:
+  Black: []
+  Blue: []
+  Green: []
+  Gray: [Grey]
+  Orange: []
+  Pink: []
+  Purple: [Purp]
+  Red: []
+  Teal: []
+  White: []
+  Yellow: []
+
+wall_styles:
+  slab: []
+  vertical: [vert]
+  overhang: [steep]
+  roof: [cave]
+  arete: []
+  dihedral: [corner]
