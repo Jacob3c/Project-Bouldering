@@ -68,7 +68,7 @@ Facts a file name can't hold go in `metadata/attempts.csv`, one row per clip (bl
 | `file_name` | the clip's file name (any spelling the name parser accepts) |
 | `wall_style` | main style: `slab`, `vertical`, `overhang`, `roof`, `arete`, `dihedral` |
 | `wall_sections` | styles in climbing order, e.g. `vertical>overhang>slab` |
-| `fall_move` | move number of the fall (1 = first move); blank on a send |
+| `fall_move` | move number of the fall (1 = first move; `start` or `0` = fell on the start holds); blank on a send |
 | `notes` | free text |
 
 ```bash
