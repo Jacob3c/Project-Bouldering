@@ -50,3 +50,10 @@ Short entries: what was decided, why, and what else was considered.
 - **Rules:** bad or unknown names are rejected (not copied); a SHA-256 match with the manifest marks a duplicate; the same ID with different bytes is an `id_conflict`; reruns are no-ops. Originals are copied, never moved. The manifest is written to a temp file and renamed, so a crash cannot corrupt it.
 - **Considered:** fixing IDs inside each stage (more code to keep in step); moving files instead of copying (risks losing originals while the pipeline is young).
 - **Next:** join the attempts log (`metadata/`) for wall angle, wall style and fall move; rerun pose on `data/raw/` and drop the duplicate keypoint file.
+
+## 2026-11-12 - Attempts log: only hand-entered facts, no wall angle
+- **Decision:** `metadata/attempts.csv` holds only what can't be read from the file name or video: `file_name`, `wall_style`, `wall_sections`, `fall_move`, `notes`. `boulder.ingest.attempts` normalizes it and left-joins it onto the manifest as `data/clips.parquet`.
+- **Why slim:** the old template repeated date, gym, grade, attempt, outcome and camera, which already live in the file name. Two copies of a fact eventually disagree; each fact now has one source.
+- **Why no wall angle:** gym boulders change angle by section, so one number per clip would be false precision. `wall_style` (dominant) plus `wall_sections` (order climbed, e.g. `vertical>overhang>slab`) records what can be observed reliably.
+- **Considered:** a per-move table (most precise, too slow to fill for now).
+- **Next:** estimate wall angle per section from the multi-angle 3D reconstruction in v2.
