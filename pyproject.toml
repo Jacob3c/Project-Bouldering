@@ -17,6 +17,7 @@ dependencies = [
     "pandas",
     "pyarrow",         # Parquet storage
     "duckdb",          # local SQL over Parquet
+    "pyyaml",          # reads configs/*.yaml
 ]
 
 [project.optional-dependencies]
