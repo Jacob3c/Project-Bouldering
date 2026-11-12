@@ -1,6 +1,6 @@
 # Project-Bouldering
 Video-to-analytics pipeline for bouldering: pose keypoints, climbing metrics, and skeleton-overlay feedback.
-Project Boulder turns raw climbing footage into reliable, queryable data about how a climber moves. Videos of bouldering attempts are ingested with metadata (grade, wall angle, sent or fell), run through pose estimation, and stored as keypoint time series. Transformations compute movement metrics such as arm bend, foot readjustments, hesitation time and hip-path smoothness, and data-quality checks flag low-confidence frames. The output is a feedback video with a skeleton overlay that highlights inefficient moves.
+Project Boulder turns raw climbing footage into reliable, queryable data about how a climber moves. Videos of bouldering attempts are ingested with metadata (grade, wall style, sent or fell), run through pose estimation, and stored as keypoint time series. Transformations compute movement metrics such as arm bend, foot readjustments, hesitation time and hip-path smoothness, and data-quality checks flag low-confidence frames. The output is a feedback video with a skeleton overlay that highlights inefficient moves.
 
 Roadmap: v1 single camera + rule-based metrics → v2 multi-angle 3D reconstruction → v3 learned models and physics simulation.
 
@@ -58,6 +58,27 @@ python -m boulder.ingest.run data/test             # copy + record new clips
   `sha256`, `size_bytes`, `fps`, `n_frames`, `width`, `height`, `duration_s`, `ingested_at`.
 
 Then run pose on the ingested clips: `python -m boulder.pose.run data/raw/*.mov --skip-existing`.
+
+### Attempts log
+
+Facts a file name can't hold go in `metadata/attempts.csv`, one row per clip (blank cells are fine):
+
+| Column | Meaning |
+| --- | --- |
+| `file_name` | the clip's file name (any spelling the name parser accepts) |
+| `wall_style` | main style: `slab`, `vertical`, `overhang`, `roof`, `arete`, `dihedral` |
+| `wall_sections` | styles in climbing order, e.g. `vertical>overhang>slab` |
+| `fall_move` | move number of the fall (1 = first move); blank on a send |
+| `notes` | free text |
+
+```bash
+python -m boulder.ingest.attempts            # manifest + log -> data/clips.parquet
+python -m boulder.ingest.attempts --strict   # fail if the log has any issue
+```
+
+Styles are normalized through `configs/aliases.yaml`. Every ingested clip appears in
+`data/clips.parquet` (a left join), and problems are printed: unknown styles, log rows that match
+no ingested clip, clips listed twice, or a `fall_move` on a send.
 
 ## Pose extraction
 
