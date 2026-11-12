@@ -57,3 +57,10 @@ Short entries: what was decided, why, and what else was considered.
 - **Why no wall angle:** gym boulders change angle by section, so one number per clip would be false precision. `wall_style` (dominant) plus `wall_sections` (order climbed, e.g. `vertical>overhang>slab`) records what can be observed reliably.
 - **Considered:** a per-move table (most precise, too slow to fill for now).
 - **Next:** estimate wall angle per section from the multi-angle 3D reconstruction in v2.
+
+## 2026-11-12 - Quality checks and their thresholds
+- **Evidence** (`boulder.quality.profile`, 5 handheld clips, rtmpose-feet): detection gaps negligible (longest 1 processed frame); MainRec Orange V3-4 torso only 62 px vs 165-241 px for the others; ABP has 2.4% of points out of frame; normal frame-to-frame steps reach 0.6-0.9 torso lengths at the 99th percentile (handheld camera motion adds to every joint); on SouthSide frames 698 and 726 every joint jumped 3.6-6.9 TL at once.
+- **Cause of the whole-body jumps:** checked in the video: a person walked in front of the camera, and `pick_main_person` (largest skeleton) switched to them.
+- **Decision:** `boulder.quality` marks frames invalid when the hip midpoint is > 1.5 TL from the climber's last good position, staying invalid until the skeleton returns (new position accepted after 2 s: the camera moved for good). Single-joint spikes are measured relative to the hips against a 5-frame rolling median (> 1.0 TL) so camera shake cancels out. Clips get pass / warn / fail with reasons.
+- **Considered:** comparing each frame only with the previous one (misses the frames while the passer-by is in view); thresholds from p99 (0.6-0.9 TL would drop normal handheld movement).
+- **Next:** track the climber in the pose backend (pick the person nearest the previous frame instead of the largest), then confirm with `quality.run` that SouthSide has no body jumps; make metrics skip invalid frames and dropped points.
