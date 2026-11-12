@@ -3,7 +3,14 @@
 import pandas as pd
 import pytest
 
-from boulder.ingest.attempts import LOG_COLUMNS, build_clips, clean_log, read_log
+from boulder.ingest.attempts import (
+    LOG_COLUMNS,
+    START_MOVE,
+    build_clips,
+    clean_log,
+    parse_fall_move,
+    read_log,
+)
 
 SEND = "2026-01-19_ABP_Orange-V3_att01_send_handheld"
 FELL = "2026-11-08_SouthSide_Orange-V5-6_att02_fell_tripod"
@@ -98,3 +105,23 @@ def test_real_log_file_parses_cleanly():
     """metadata/attempts.csv in the repo must always be readable and issue-free."""
     _, issues = clean_log(read_log())
     assert issues == []
+
+
+def test_parse_fall_move_accepts_start():
+    for raw in ["start", "Start", " START ", "0"]:
+        assert parse_fall_move(raw) == START_MOVE == 0
+    assert parse_fall_move("4") == 4
+    assert parse_fall_move("four") is None
+    assert parse_fall_move("-1") is None
+
+
+def test_fall_on_start_is_stored_as_zero():
+    clean, issues = clean_log(_log({"file_name": f"{FELL}.mp4", "fall_move": "start"}))
+    assert issues == []
+    assert clean.iloc[0]["fall_move"] == 0
+    assert str(clean["fall_move"].dtype) == "Int64"  # column stays numeric
+
+
+def test_start_on_a_send_is_still_reported():
+    _, issues = clean_log(_log({"file_name": f"{SEND}.MOV", "fall_move": "start"}))
+    assert any("is a send" in i for i in issues)

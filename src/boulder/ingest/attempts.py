@@ -13,7 +13,8 @@ Log columns (all optional except file_name; blank cells are fine):
     file_name      the clip's file name; any spelling the name parser accepts
     wall_style     main style of the climb: slab | vertical | overhang | roof | arete | dihedral
     wall_sections  styles in climbing order, joined with ">", e.g. vertical>overhang>slab
-    fall_move      move number of the fall (1 = first move); blank on a send
+    fall_move      move number of the fall (1 = first move; start or 0 = fell on the
+                   start holds); blank on a send
     notes          free text, never used in calculations
 
 Styles are mapped to official names via configs/aliases.yaml ("steep" -> "overhang").
@@ -37,6 +38,7 @@ LOG_PATH = Path("metadata/attempts.csv")
 CLIPS_PATH = Path("data/clips.parquet")
 LOG_COLUMNS = ["file_name", "wall_style", "wall_sections", "fall_move", "notes"]
 CLEAN_COLUMNS = ["clip_id", "wall_style", "wall_sections", "fall_move", "notes"]
+START_MOVE = 0  # fall_move for a fall on the start holds, before move 1
 
 
 def read_log(path: Path = LOG_PATH) -> pd.DataFrame:
@@ -56,6 +58,18 @@ def _style(raw: str, where: str, issues: list[str]) -> str:
     return official
 
 
+def parse_fall_move(raw: str) -> int | None:
+    """Fall move as a number: 'start' or '0' -> 0, '4' -> 4, anything else -> None.
+
+    Stored as a number (not the word "start") so the column stays numeric and
+    falls can be sorted or compared by how far the climb got.
+    """
+    text = raw.strip().lower()
+    if text == "start":
+        return START_MOVE
+    return int(text) if text.isdigit() else None
+
+
 def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     """Turn raw log rows into one clean row per clip_id, plus a list of problems found."""
     rows, issues = [], []
@@ -72,13 +86,10 @@ def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
             parts = [p.strip() for p in rec["wall_sections"].split(">") if p.strip()]
             sections = ">".join(_style(p, where, issues) for p in parts)
 
-        fall_move = None
-        if rec["fall_move"]:
-            if rec["fall_move"].isdigit() and int(rec["fall_move"]) >= 1:
-                fall_move = int(rec["fall_move"])
-            else:
-                issues.append(f"{where}: fall_move must be a whole number >= 1, got "
-                              f"'{rec['fall_move']}'")
+        fall_move = parse_fall_move(rec["fall_move"]) if rec["fall_move"] else None
+        if rec["fall_move"] and fall_move is None:
+            issues.append(f"{where}: fall_move must be 'start' or a whole number, got "
+                          f"'{rec['fall_move']}'")
         if fall_move is not None and info.outcome == "send":
             issues.append(f"{where}: fall_move given but the clip is a send")
 
