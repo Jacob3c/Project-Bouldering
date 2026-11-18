@@ -264,7 +264,7 @@ def attempt_metrics(frames: pd.DataFrame, cfg: MetricConfig | None = None) -> di
         return {"frames": 0}
     row: dict = {
         "frames": len(frames),
-        "duration_s": float(frames["t_s"].iloc[-1]),
+        "duration_s": float(frames["t_s"].iloc[-1] - frames["t_s"].iloc[0]),  # window may not start at 0
         "body_scale_px": float(frames["body_scale_px"].iloc[0]),
     }
     for side in ("left", "right"):

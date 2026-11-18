@@ -4,8 +4,11 @@ Usage:
     python -m boulder.transforms.run                          # rtmpose-feet, all cameras
     python -m boulder.transforms.run --camera tripod
     python -m boulder.transforms.run --model mediapipe --skip-existing
+    python -m boulder.transforms.run --no-quality --no-window   # raw keypoints, whole clip
 
 Reads:  data/processed/keypoints/camera=<c>/model=<m>/<video_id>.parquet
+        data/processed/quality/points/...   (if present: bad points are ignored)
+        data/clips.parquet                  (if present: only the climb window is used)
 Writes: data/processed/metrics/frames/camera=<c>/model=<m>/<video_id>.parquet   (per frame)
         data/processed/metrics/attempts/camera=<c>/model=<m>/<video_id>.parquet (one row)
 
@@ -26,14 +29,16 @@ import pandas as pd
 from boulder.ingest.clip_name import parse_clip_name
 
 from .metrics import MetricConfig, apply_camera_rules, attempt_metrics, frame_metrics
+from .prepare import apply_climb_window, apply_point_quality, load_climb_windows
 
 KEYPOINT_ROOT = Path("data/processed/keypoints")
 METRIC_ROOT = Path("data/processed/metrics")
+QUALITY_ROOT = Path("data/processed/quality/points")
 
 SUMMARY_COLS = [
     "video_id", "outcome", "grade", "duration_s", "arms_straight_share",
     "foot_moves", "foot_readjustments", "pauses", "pause_total_s",
-    "hip_path_efficiency",
+    "hip_path_efficiency", "window", "quality_applied",
 ]
 
 
@@ -50,7 +55,8 @@ def format_table(df: pd.DataFrame) -> str:
 
 
 def process_file(kp_path: Path, metric_root: Path, cfg: MetricConfig,
-                 skip_existing: bool = False) -> dict | None:
+                 skip_existing: bool = False, quality_root: Path | None = QUALITY_ROOT,
+                 windows: dict | None = None) -> dict | None:
     camera_dir, model_dir = kp_path.parent.parent.name, kp_path.parent.name
     rel = Path(camera_dir) / model_dir / kp_path.name
     frames_out = metric_root / "frames" / rel
@@ -59,9 +65,21 @@ def process_file(kp_path: Path, metric_root: Path, cfg: MetricConfig,
         return pd.read_parquet(attempt_out).iloc[0].to_dict()
 
     keypoints = pd.read_parquet(kp_path)
-    frames = frame_metrics(keypoints, cfg)
     info = parse_clip_name(kp_path)
+
+    quality_path = quality_root / rel if quality_root is not None else None
+    invalid_frames = None
+    if quality_path is not None and quality_path.exists():
+        keypoints, invalid_frames = apply_point_quality(keypoints, pd.read_parquet(quality_path))
+    start_s, end_s = (windows or {}).get(info.canonical_id or kp_path.stem, (None, None))
+    keypoints = apply_climb_window(keypoints, start_s, end_s)
+
+    frames = frame_metrics(keypoints, cfg)
     row = apply_camera_rules({**info.to_dict(), **attempt_metrics(frames, cfg)}, info.camera)
+    row["quality_applied"] = invalid_frames is not None
+    row["invalid_frames_masked"] = invalid_frames
+    row["climb_start_s"], row["climb_end_s"] = start_s, end_s
+    row["window"] = "whole clip" if start_s is None and end_s is None else "climb"
     row["model_version"] = keypoints["model_version"].iloc[0] if len(keypoints) else None
     row["metric_config"] = json.dumps(cfg.to_dict(), sort_keys=True)
 
@@ -82,6 +100,10 @@ def main() -> None:
     parser.add_argument("--keypoints", type=Path, default=KEYPOINT_ROOT)
     parser.add_argument("--out", type=Path, default=METRIC_ROOT)
     parser.add_argument("--skip-existing", action="store_true")
+    parser.add_argument("--no-quality", action="store_true",
+                        help="ignore quality flags (run python -m boulder.quality.run first to use them)")
+    parser.add_argument("--no-window", action="store_true",
+                        help="use the whole clip, not climb_start_s..climb_end_s")
     args = parser.parse_args()
 
     camera = "*" if args.camera == "all" else args.camera
@@ -91,8 +113,11 @@ def main() -> None:
                      f"under {args.keypoints}")
 
     cfg = MetricConfig()
-    rows = [r for f in files if (r := process_file(f, args.out, cfg, args.skip_existing))]
-    summary = pd.DataFrame(rows)[SUMMARY_COLS]
+    quality_root = None if args.no_quality else QUALITY_ROOT
+    windows = {} if args.no_window else load_climb_windows()
+    rows = [r for f in files
+            if (r := process_file(f, args.out, cfg, args.skip_existing, quality_root, windows))]
+    summary = pd.DataFrame(rows).reindex(columns=SUMMARY_COLS)  # old saved rows lack new columns
     print(format_table(summary))
     print(f"\n{len(rows)} attempts -> {args.out}/attempts/")
     if summary["pauses"].isna().any():

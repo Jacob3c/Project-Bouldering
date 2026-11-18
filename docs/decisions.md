@@ -64,3 +64,9 @@ Short entries: what was decided, why, and what else was considered.
 - **Decision:** `boulder.quality` marks frames invalid when the hip midpoint is > 1.5 TL from the climber's last good position, staying invalid until the skeleton returns (new position accepted after 2 s: the camera moved for good). Single-joint spikes are measured relative to the hips against a 5-frame rolling median (> 1.0 TL) so camera shake cancels out. Clips get pass / warn / fail with reasons.
 - **Considered:** comparing each frame only with the previous one (misses the frames while the passer-by is in view); thresholds from p99 (0.6-0.9 TL would drop normal handheld movement).
 - **Next:** track the climber in the pose backend (pick the person nearest the previous frame instead of the largest), then confirm with `quality.run` that SouthSide has no body jumps; make metrics skip invalid frames and dropped points.
+
+## 2026-11-18 - Metrics use quality flags and the climb window
+- **Decision:** `boulder.transforms.run` sets confidence to 0 for points with `point_ok = False` (quality checks) and keeps only frames inside the attempts-log climb window. Both are on by default and fall back gracefully (no quality file = raw keypoints; blank times = whole clip).
+- **Why mask, not delete:** metrics already treat low-confidence joints as missing and only interpolate short gaps, so a masked passer-by stretch stays a gap instead of being bridged.
+- **Also:** `duration_s` is now last minus first timestamp, correct for windows that don't start at 0.
+- **Traceability:** each attempt row records `quality_applied`, `invalid_frames_masked`, `window` and the times used.
