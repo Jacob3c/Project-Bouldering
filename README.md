@@ -122,6 +122,12 @@ python -m boulder.transforms.run                    # all clips with rtmpose-fee
 python -m boulder.transforms.run --camera tripod --skip-existing
 ```
 
+Metrics use your earlier steps when their outputs exist: points the quality checks rejected
+(`python -m boulder.quality.run`) are ignored, and only the `climb_start_s`..`climb_end_s` window
+from the attempts log (`python -m boulder.ingest.attempts`) is measured. Blank times mean the whole
+clip. `--no-quality` and `--no-window` turn either off; each attempt row records what was applied
+(`quality_applied`, `invalid_frames_masked`, `window`, `climb_start_s`, `climb_end_s`).
+
 Writes a per-frame table and a one-row-per-attempt summary to `data/processed/metrics/{frames,attempts}/camera=<c>/model=<m>/`. Attempt metadata (date, gym, grade, attempt, outcome, camera) is parsed from the clip's file name.
 
 | Metric | Meaning |
