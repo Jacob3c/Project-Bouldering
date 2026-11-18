@@ -70,3 +70,9 @@ Short entries: what was decided, why, and what else was considered.
 - **Why mask, not delete:** metrics already treat low-confidence joints as missing and only interpolate short gaps, so a masked passer-by stretch stays a gap instead of being bridged.
 - **Also:** `duration_s` is now last minus first timestamp, correct for windows that don't start at 0.
 - **Traceability:** each attempt row records `quality_applied`, `invalid_frames_masked`, `window` and the times used.
+
+## 2026-11-18 - Track the climber instead of picking the biggest person
+- **Problem:** `pick_main_person` kept the largest skeleton per frame, so a passer-by near the camera took over (SouthSide frames 698-726; found by the quality checks).
+- **Decision:** the RTMPose backend follows the climber: biggest person in the first frame, then the person nearest the climber's last position (within 1 body size) and of similar size (< 1.8x). If nobody qualifies the frame gets no skeleton, which the quality and metrics steps already handle as missing. After 30 frames without a match it starts over from the biggest person. `model_version` ends in `/tracked`.
+- **Considered:** only flagging bad frames (kept as a safety net in `boulder.quality`).
+- **Check:** rerun pose, then `boulder.quality.run`: SouthSide's body-jump frames should drop.
