@@ -9,6 +9,7 @@ from boulder.ingest.attempts import (
     build_clips,
     clean_log,
     parse_fall_move,
+    parse_seconds,
     read_log,
 )
 
@@ -95,10 +96,9 @@ def test_read_log_requires_all_columns(tmp_path):
 
 def test_read_log_keeps_blank_cells_as_text(tmp_path):
     path = tmp_path / "attempts.csv"
-    path.write_text("file_name,wall_style,wall_sections,fall_move,notes\n"
-                    f" {SEND}.MOV ,,,, \n")
+    path.write_text(",".join(LOG_COLUMNS) + "\n" + f" {SEND}.MOV " + "," * 6 + " \n")
     log = read_log(path)
-    assert log.iloc[0].tolist() == [f"{SEND}.MOV", "", "", "", ""]
+    assert log.iloc[0].tolist() == [f"{SEND}.MOV"] + [""] * 6
 
 
 def test_real_log_file_parses_cleanly():
@@ -125,3 +125,44 @@ def test_fall_on_start_is_stored_as_zero():
 def test_start_on_a_send_is_still_reported():
     _, issues = clean_log(_log({"file_name": f"{SEND}.MOV", "fall_move": "start"}))
     assert any("is a send" in i for i in issues)
+
+
+# --- climb window ---
+
+def test_parse_seconds_formats():
+    assert parse_seconds("4.2") == 4.2
+    assert parse_seconds("0:38") == 38.0
+    assert parse_seconds("1:05.5") == 65.5
+    for bad in ["abc", "-3", "1:75", "1:2:3", "nan", "inf", ""]:
+        assert parse_seconds(bad) is None, bad
+
+
+def test_climb_window_is_parsed_and_stored_as_seconds():
+    clean, issues = clean_log(_log({"file_name": f"{SEND}.MOV",
+                                    "climb_start_s": "4.2", "climb_end_s": "0:36.8"}))
+    assert issues == []
+    row = clean.iloc[0]
+    assert (row["climb_start_s"], row["climb_end_s"]) == (4.2, 36.8)
+    assert str(clean["climb_end_s"].dtype) == "float64"
+
+
+def test_blank_climb_window_is_allowed():
+    clean, issues = clean_log(_log({"file_name": f"{SEND}.MOV"}))
+    assert issues == [] and clean["climb_start_s"].isna().all()
+
+
+def test_bad_climb_times_are_reported():
+    _, issues = clean_log(_log({"file_name": f"{SEND}.MOV", "climb_start_s": "soon"}))
+    assert any("climb_start_s must be seconds" in i for i in issues)
+
+    _, issues = clean_log(_log({"file_name": f"{SEND}.MOV",
+                                "climb_start_s": "30", "climb_end_s": "0:10"}))
+    assert any("must be before climb_end_s" in i for i in issues)
+
+
+def test_climb_end_after_clip_end_is_reported():
+    manifest = _manifest(SEND).assign(duration_s=40.0)
+    ok, issues = build_clips(manifest, _log({"file_name": f"{SEND}.MOV", "climb_end_s": "40.3"}))
+    assert issues == []                                   # within the 0.5 s slack
+    _, issues = build_clips(manifest, _log({"file_name": f"{SEND}.MOV", "climb_end_s": "0:45"}))
+    assert any("after the end of the clip (40.0 s)" in i for i in issues)

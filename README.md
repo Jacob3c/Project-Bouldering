@@ -66,6 +66,8 @@ Facts a file name can't hold go in `metadata/attempts.csv`, one row per clip (bl
 | Column | Meaning |
 | --- | --- |
 | `file_name` | the clip's file name (any spelling the name parser accepts) |
+| `climb_start_s` | when the climb starts (leaving the ground): seconds (`4.2`) or m:ss as QuickTime shows it (`0:04.2`) |
+| `climb_end_s` | when the climb ends (top-out or fall), same formats |
 | `wall_style` | main style: `slab`, `vertical`, `overhang`, `roof`, `arete`, `dihedral` |
 | `wall_sections` | styles in climbing order, e.g. `vertical>overhang>slab` |
 | `fall_move` | move number of the fall (1 = first move; `start` or `0` = fell on the start holds); blank on a send |
