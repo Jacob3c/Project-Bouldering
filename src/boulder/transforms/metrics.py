@@ -14,6 +14,10 @@ are comparable. Unit: "torso lengths" (TL). Image y points down.
 
 Thresholds live in MetricConfig. They are first guesses, meant to be
 calibrated later by comparing sends with falls on tripod footage.
+
+Camera motion: foot moves are measured from the gap between the two feet, which
+camera and hip motion don't change. Pauses and hip-path metrics have no such
+fix and need a fixed (tripod) camera; see FIXED_CAMERA_METRICS.
 """
 
 from __future__ import annotations
@@ -30,6 +34,7 @@ class MetricConfig:
     max_gap_s: float = 0.25          # fill gaps shorter than this by interpolation
     smooth_window_s: float = 0.2     # centred rolling mean over positions
     straight_arm_deg: float = 150.0  # elbow angle at or above = straight arm
+    foot_reference: str = "other_foot"  # "other_foot" (cancels camera + hip motion) | "frame"
     foot_move_speed: float = 0.6     # TL/s; foot faster than this = moving
     foot_still_s: float = 0.3        # foot must be still this long between moves
     readjust_max_dist: float = 0.3   # TL; a foot move shorter than this = readjustment
@@ -45,6 +50,12 @@ FOOT_POINT = {
     "left": ["left_big_toe", "left_foot_index", "left_ankle"],
     "right": ["right_big_toe", "right_foot_index", "right_ankle"],
 }
+
+# Attempt metrics that only mean something when the camera doesn't move.
+FIXED_CAMERA_METRICS = [
+    "pauses", "pause_total_s", "pause_longest_s",
+    "hip_path_tl", "hip_path_efficiency", "hip_mean_jerk",
+]
 
 NEEDED = [
     "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
@@ -153,19 +164,51 @@ def frame_metrics(keypoints: pd.DataFrame, cfg: MetricConfig | None = None) -> p
     hip = hip_mid / scale
     out["hip_x_tl"], out["hip_y_tl"] = hip[:, 0], hip[:, 1]
     out["hip_speed_tlps"] = _speed(hip, t_s)
+
+    # Gap between the feet. Camera motion and hip motion shift both feet equally,
+    # so this vector only changes when a foot moves relative to the other one.
+    gap = out[["right_foot_x_tl", "right_foot_y_tl"]].to_numpy() - \
+        out[["left_foot_x_tl", "left_foot_y_tl"]].to_numpy()
+    out["foot_gap_x_tl"], out["foot_gap_y_tl"] = gap[:, 0], gap[:, 1]
+    out["foot_gap_speed_tlps"] = _speed(gap, t_s)
+    for side in ("left", "right"):  # foot speed relative to the hips: says WHICH foot moved
+        rel = out[[f"{side}_foot_x_tl", f"{side}_foot_y_tl"]].to_numpy() - hip
+        out[f"{side}_foot_hiprel_speed_tlps"] = _speed(rel, t_s)
     return out
 
 
 # ---------------------------------------------------------------- attempt metrics
 
+def _foot_signal(frames: pd.DataFrame, side: str, cfg: MetricConfig
+                 ) -> tuple[np.ndarray, np.ndarray]:
+    """(speed, position) used to detect this foot's moves.
+
+    "frame": the foot's own speed in the image (fooled by a moving camera).
+    "other_foot": how fast the gap between the feet changes, credited to this
+    foot only in frames where it moves faster relative to the hips than the
+    other foot does. Camera and hip motion cancel out.
+    """
+    if cfg.foot_reference == "frame":
+        return (frames[f"{side}_foot_speed_tlps"].to_numpy(),
+                frames[[f"{side}_foot_x_tl", f"{side}_foot_y_tl"]].to_numpy())
+    other = "right" if side == "left" else "left"
+    mine = np.nan_to_num(frames[f"{side}_foot_hiprel_speed_tlps"].to_numpy())
+    theirs = np.nan_to_num(frames[f"{other}_foot_hiprel_speed_tlps"].to_numpy())
+    gap_speed = frames["foot_gap_speed_tlps"].to_numpy()
+    speed = np.where(mine >= theirs, gap_speed, 0.0)
+    speed[np.isnan(gap_speed)] = np.nan
+    return speed, frames[["foot_gap_x_tl", "foot_gap_y_tl"]].to_numpy()
+
+
 def _foot_moves(frames: pd.DataFrame, side: str, cfg: MetricConfig) -> tuple[int, int]:
     """(moves, readjustments) for one foot.
 
-    A move = a run of frames faster than foot_move_speed. Moves separated by less
-    than foot_still_s of stillness are merged. A move whose start-to-end distance
-    is under readjust_max_dist torso lengths counts as a readjustment.
+    A move = a run of frames faster than foot_move_speed (see _foot_signal).
+    Moves separated by less than foot_still_s of stillness are merged. A move
+    whose start-to-end distance is under readjust_max_dist torso lengths counts
+    as a readjustment.
     """
-    speed = frames[f"{side}_foot_speed_tlps"].to_numpy()
+    speed, pos = _foot_signal(frames, side, cfg)
     if np.isnan(speed).all():
         return 0, 0
     t = frames["t_s"].to_numpy()
@@ -177,7 +220,6 @@ def _foot_moves(frames: pd.DataFrame, side: str, cfg: MetricConfig) -> tuple[int
         else:
             merged.append([start, end])
 
-    pos = frames[[f"{side}_foot_x_tl", f"{side}_foot_y_tl"]].to_numpy()
     readjust = 0
     for start, end in merged:
         a, b = pos[max(start - 1, 0)], pos[min(end, len(pos) - 1)]
@@ -245,3 +287,19 @@ def attempt_metrics(frames: pd.DataFrame, cfg: MetricConfig | None = None) -> di
     length, efficiency, jerk = _hip_path(frames)
     row["hip_path_tl"], row["hip_path_efficiency"], row["hip_mean_jerk"] = length, efficiency, jerk
     return row
+
+
+def apply_camera_rules(row: dict, camera: str | None) -> dict:
+    """Blank out metrics a moving camera makes meaningless.
+
+    Only tripod clips keep FIXED_CAMERA_METRICS; for any other camera they become
+    NaN, and `fixed_camera_metrics_valid` records which case applied.
+    """
+    valid = camera == "tripod"
+    out = dict(row)
+    out["fixed_camera_metrics_valid"] = valid
+    if not valid:
+        for key in FIXED_CAMERA_METRICS:
+            if key in out:
+                out[key] = np.nan
+    return out
