@@ -20,11 +20,12 @@ import argparse
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from boulder.ingest.clip_name import parse_clip_name
 
-from .metrics import MetricConfig, attempt_metrics, frame_metrics
+from .metrics import MetricConfig, apply_camera_rules, attempt_metrics, frame_metrics
 
 KEYPOINT_ROOT = Path("data/processed/keypoints")
 METRIC_ROOT = Path("data/processed/metrics")
@@ -34,6 +35,18 @@ SUMMARY_COLS = [
     "foot_moves", "foot_readjustments", "pauses", "pause_total_s",
     "hip_path_efficiency",
 ]
+
+
+def format_table(df: pd.DataFrame) -> str:
+    """Plain text table with two spaces between columns; NaN shown as '-'."""
+    def cell(v):
+        if isinstance(v, float):
+            return "-" if np.isnan(v) else f"{v:.2f}"
+        return str(v)
+
+    cells = [[str(c) for c in df.columns]] + [[cell(v) for v in row] for row in df.itertuples(index=False)]
+    widths = [max(len(r[i]) for r in cells) for i in range(len(df.columns))]
+    return "\n".join("  ".join(v.ljust(w) for v, w in zip(r, widths)) for r in cells)
 
 
 def process_file(kp_path: Path, metric_root: Path, cfg: MetricConfig,
@@ -47,7 +60,8 @@ def process_file(kp_path: Path, metric_root: Path, cfg: MetricConfig,
 
     keypoints = pd.read_parquet(kp_path)
     frames = frame_metrics(keypoints, cfg)
-    row = {**parse_clip_name(kp_path).to_dict(), **attempt_metrics(frames, cfg)}
+    info = parse_clip_name(kp_path)
+    row = apply_camera_rules({**info.to_dict(), **attempt_metrics(frames, cfg)}, info.camera)
     row["model_version"] = keypoints["model_version"].iloc[0] if len(keypoints) else None
     row["metric_config"] = json.dumps(cfg.to_dict(), sort_keys=True)
 
@@ -79,10 +93,10 @@ def main() -> None:
     cfg = MetricConfig()
     rows = [r for f in files if (r := process_file(f, args.out, cfg, args.skip_existing))]
     summary = pd.DataFrame(rows)[SUMMARY_COLS]
-    with pd.option_context("display.width", 200, "display.max_columns", None,
-                           "display.float_format", "{:.2f}".format):
-        print(summary.to_string(index=False))
+    print(format_table(summary))
     print(f"\n{len(rows)} attempts -> {args.out}/attempts/")
+    if summary["pauses"].isna().any():
+        print("'-' = needs a tripod clip (pauses and hip path are meaningless with a moving camera)")
 
 
 if __name__ == "__main__":

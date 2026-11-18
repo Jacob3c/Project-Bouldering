@@ -105,3 +105,54 @@ def test_parse_clip_name():
     assert (info.date, info.gym, info.colour, info.grade) == ("2026-09-12", "Stone_CO", "Purple", "V3")
     assert (info.attempt, info.outcome, info.camera) == (1, "send", "handheld")
     assert parse_clip_name("random_clip.mp4").name_ok is False
+
+
+def _shift(pts, dx=0.0, dy=0.0):
+    return {k: (x + dx, y + dy) for k, (x, y) in pts.items()}
+
+
+def test_camera_pan_is_not_a_foot_move():
+    # whole body slides across the frame (camera panning), feet never move on the wall
+    seq = [_shift(_skeleton(), dx=8 * k, dy=-5 * k) for k in range(3 * FPS)]
+    row = attempt_metrics(frame_metrics(_keypoints(seq)))
+    assert row["foot_moves"] == 0
+
+
+def test_hips_moving_with_feet_planted_is_not_a_foot_move():
+    # stand up: hips rise 200 px, feet stay where they are
+    seq = [_skeleton() for _ in range(FPS)]
+    seq += [_skeleton(hip_y=1000 - 10 * k, left_foot=(450, 1300)) for k in range(1, 21)]
+    for f in seq[FPS:]:
+        f["right_big_toe"] = (550, 1320)
+        f["right_ankle"] = (550, 1300)
+    seq += [seq[-1] for _ in range(FPS)]
+    row = attempt_metrics(frame_metrics(_keypoints(seq)))
+    assert row["foot_moves"] == 0
+
+
+def test_frame_reference_is_fooled_by_camera_pan():
+    seq = [_shift(_skeleton(), dx=8 * k) for k in range(3 * FPS)]
+    cfg = MetricConfig(foot_reference="frame")
+    assert attempt_metrics(frame_metrics(_keypoints(seq), cfg), cfg)["foot_moves"] > 0
+
+
+def test_camera_rules_blank_fixed_camera_metrics():
+    from boulder.transforms.metrics import FIXED_CAMERA_METRICS, apply_camera_rules
+
+    row = {"pauses": 2, "hip_path_efficiency": 0.7, "arms_straight_share": 0.4}
+    handheld = apply_camera_rules(row, "handheld")
+    assert np.isnan(handheld["pauses"]) and np.isnan(handheld["hip_path_efficiency"])
+    assert handheld["arms_straight_share"] == 0.4
+    assert handheld["fixed_camera_metrics_valid"] is False
+    tripod = apply_camera_rules(row, "tripod")
+    assert tripod["pauses"] == 2 and tripod["fixed_camera_metrics_valid"] is True
+    assert "pause_total_s" in FIXED_CAMERA_METRICS
+
+
+def test_format_table_spacing_and_nan():
+    from boulder.transforms.run import format_table
+
+    text = format_table(pd.DataFrame({"outcome": ["send"], "grade": ["V3"], "pauses": [np.nan]}))
+    header, line = text.splitlines()
+    assert line.split() == ["send", "V3", "-"]          # columns never run together
+    assert header.index("grade") == line.index("V3")    # values line up under headers
