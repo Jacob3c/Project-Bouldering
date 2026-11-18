@@ -11,6 +11,9 @@ Usage:
 
 Log columns (all optional except file_name; blank cells are fine):
     file_name      the clip's file name; any spelling the name parser accepts
+    climb_start_s  when the climb starts (leaving the ground), in seconds (4.2) or
+                   m:ss as QuickTime shows it (0:04.2)
+    climb_end_s    when the climb ends (top-out or fall), same formats
     wall_style     main style of the climb: slab | vertical | overhang | roof | arete | dihedral
     wall_sections  styles in climbing order, joined with ">", e.g. vertical>overhang>slab
     fall_move      move number of the fall (1 = first move; start or 0 = fell on the
@@ -25,6 +28,7 @@ it has no row in the log.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -36,8 +40,11 @@ from boulder.ingest.run import MANIFEST_PATH, load_manifest, save_manifest
 
 LOG_PATH = Path("metadata/attempts.csv")
 CLIPS_PATH = Path("data/clips.parquet")
-LOG_COLUMNS = ["file_name", "wall_style", "wall_sections", "fall_move", "notes"]
-CLEAN_COLUMNS = ["clip_id", "wall_style", "wall_sections", "fall_move", "notes"]
+LOG_COLUMNS = ["file_name", "climb_start_s", "climb_end_s", "wall_style", "wall_sections",
+               "fall_move", "notes"]
+CLEAN_COLUMNS = ["clip_id", "climb_start_s", "climb_end_s", "wall_style", "wall_sections",
+                 "fall_move", "notes"]
+DURATION_SLACK_S = 0.5  # climb times may run this far past the reported clip length
 START_MOVE = 0  # fall_move for a fall on the start holds, before move 1
 
 
@@ -70,6 +77,34 @@ def parse_fall_move(raw: str) -> int | None:
     return int(text) if text.isdigit() else None
 
 
+def parse_seconds(raw: str) -> float | None:
+    """A time in seconds: '4.2' -> 4.2, '0:38' -> 38.0, '1:05.5' -> 65.5; else None."""
+    text = raw.strip()
+    minutes, _, seconds = text.rpartition(":")
+    try:
+        total = float(seconds) + (int(minutes) * 60 if minutes else 0)
+    except ValueError:
+        return None
+    if not math.isfinite(total) or total < 0 or (minutes and not 0 <= float(seconds) < 60):
+        return None
+    return total
+
+
+def _climb_times(rec: dict, where: str, issues: list[str]) -> tuple[float | None, float | None]:
+    """Parse and sanity-check the climb window of one log row."""
+    times = []
+    for col in ("climb_start_s", "climb_end_s"):
+        value = parse_seconds(rec[col]) if rec[col] else None
+        if rec[col] and value is None:
+            issues.append(f"{where}: {col} must be seconds (4.2) or m:ss (0:04.2), "
+                          f"got '{rec[col]}'")
+        times.append(value)
+    start, end = times
+    if start is not None and end is not None and start >= end:
+        issues.append(f"{where}: climb_start_s ({start}) must be before climb_end_s ({end})")
+    return start, end
+
+
 def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     """Turn raw log rows into one clean row per clip_id, plus a list of problems found."""
     rows, issues = [], []
@@ -86,6 +121,7 @@ def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
             parts = [p.strip() for p in rec["wall_sections"].split(">") if p.strip()]
             sections = ">".join(_style(p, where, issues) for p in parts)
 
+        climb_start, climb_end = _climb_times(rec, where, issues)
         fall_move = parse_fall_move(rec["fall_move"]) if rec["fall_move"] else None
         if rec["fall_move"] and fall_move is None:
             issues.append(f"{where}: fall_move must be 'start' or a whole number, got "
@@ -93,7 +129,8 @@ def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
         if fall_move is not None and info.outcome == "send":
             issues.append(f"{where}: fall_move given but the clip is a send")
 
-        rows.append({"clip_id": info.canonical_id, "wall_style": style,
+        rows.append({"clip_id": info.canonical_id, "climb_start_s": climb_start,
+                     "climb_end_s": climb_end, "wall_style": style,
                      "wall_sections": sections, "fall_move": fall_move,
                      "notes": rec["notes"] or None})
 
@@ -103,6 +140,8 @@ def clean_log(log: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
         issues.append(f"{clip_id} appears more than once in the log; keeping the first row")
     clean = clean.drop_duplicates("clip_id", keep="first")
     clean["fall_move"] = clean["fall_move"].astype("Int64")  # whole numbers that can be blank
+    for col in ("climb_start_s", "climb_end_s"):
+        clean[col] = clean[col].astype("float64")             # blank -> NaN
     return clean.reset_index(drop=True), issues
 
 
@@ -113,6 +152,12 @@ def build_clips(manifest: pd.DataFrame, log: pd.DataFrame) -> tuple[pd.DataFrame
     for clip_id in unmatched:
         issues.append(f"{clip_id} is in the log but was never ingested")
     clips = manifest.merge(clean, on="clip_id", how="left", validate="one_to_one")
+    if "duration_s" in clips.columns:
+        for col in ("climb_start_s", "climb_end_s"):
+            too_late = clips[col] > clips["duration_s"] + DURATION_SLACK_S
+            for _, row in clips[too_late].iterrows():
+                issues.append(f"{row['clip_id']}: {col} {row[col]:.1f} s is after the end of "
+                              f"the clip ({row['duration_s']:.1f} s)")
     return clips, issues
 
 

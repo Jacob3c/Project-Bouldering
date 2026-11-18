@@ -1,2 +1,2 @@
-file_name,wall_style,wall_sections,fall_move,notes
-2026-11-09_ABP_Blue-V3_att02_fell_tripod.mp4,overhang,vertical>overhang,4,example row - copy the format into attempts.csv
+file_name,climb_start_s,climb_end_s,wall_style,wall_sections,fall_move,notes
+2026-11-09_ABP_Blue-V3_att02_fell_tripod.mp4,2.5,0:31,overhang,vertical>overhang,4,example row - copy the format into attempts.csv
