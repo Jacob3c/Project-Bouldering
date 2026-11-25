@@ -76,3 +76,12 @@ Short entries: what was decided, why, and what else was considered.
 - **Decision:** the RTMPose backend follows the climber: biggest person in the first frame, then the person nearest the climber's last position (within 1 body size) and of similar size (< 1.8x). If nobody qualifies the frame gets no skeleton, which the quality and metrics steps already handle as missing. After 30 frames without a match it starts over from the biggest person. `model_version` ends in `/tracked`.
 - **Considered:** only flagging bad frames (kept as a safety net in `boulder.quality`).
 - **Check:** rerun pose, then `boulder.quality.run`: SouthSide's body-jump frames should drop.
+
+## 2026-11-24 - Feedback video: rule-based red flags
+- **Decision:** `boulder.render.feedback` colours limbs red from three rules: an arm bent below `straight_arm_deg` for >= 1.5 s, a foot readjustment (the same moves the metrics count), and a pause (tripod only). Flags come from the saved per-frame metrics and the `MetricConfig` stored with the attempt, so the video and the numbers always agree.
+- **Why these rules:** they reuse metrics that already exist and are camera-safe (elbow angle, foot gap), so the feedback works on today's handheld clips. Bent arms are only flagged when held, because pulling through a move needs a bent arm for a moment.
+- **Also:** flagged events are saved as a table (`data/processed/feedback/`), so the future app can list them without decoding the video.
+- **Refactor:** `foot_move_spans` and `pause_spans` in `transforms.metrics` return where each move or pause happens; the counts are unchanged.
+- **Known limits:** thresholds are first guesses; 2D elbow angles mislabel arms pointing at the camera; no flag yet for a fall or a slow move.
+- **Next:** check the videos by eye, tune `bent_arm_min_s`; then an API (FastAPI) so a phone app can upload a clip and get the feedback video back. The goal is now a mobile app, not a website.
+
