@@ -200,17 +200,18 @@ def _foot_signal(frames: pd.DataFrame, side: str, cfg: MetricConfig
     return speed, frames[["foot_gap_x_tl", "foot_gap_y_tl"]].to_numpy()
 
 
-def _foot_moves(frames: pd.DataFrame, side: str, cfg: MetricConfig) -> tuple[int, int]:
-    """(moves, readjustments) for one foot.
+def foot_move_spans(frames: pd.DataFrame, side: str, cfg: MetricConfig
+                    ) -> list[tuple[int, int, bool]]:
+    """(start_row, end_row_exclusive, is_readjustment) for each move of one foot.
 
     A move = a run of frames faster than foot_move_speed (see _foot_signal).
     Moves separated by less than foot_still_s of stillness are merged. A move
     whose start-to-end distance is under readjust_max_dist torso lengths counts
-    as a readjustment.
+    as a readjustment. Rows are positions in `frames`, not frame_idx values.
     """
     speed, pos = _foot_signal(frames, side, cfg)
     if np.isnan(speed).all():
-        return 0, 0
+        return []
     t = frames["t_s"].to_numpy()
     runs = _runs(np.nan_to_num(speed) > cfg.foot_move_speed)
     merged: list[list[int]] = []
@@ -220,25 +221,35 @@ def _foot_moves(frames: pd.DataFrame, side: str, cfg: MetricConfig) -> tuple[int
         else:
             merged.append([start, end])
 
-    readjust = 0
+    spans = []
     for start, end in merged:
         a, b = pos[max(start - 1, 0)], pos[min(end, len(pos) - 1)]
-        if np.isfinite(a).all() and np.isfinite(b).all() and \
-                np.linalg.norm(b - a) < cfg.readjust_max_dist:
-            readjust += 1
-    return len(merged), readjust
+        readjust = bool(np.isfinite(a).all() and np.isfinite(b).all()
+                        and np.linalg.norm(b - a) < cfg.readjust_max_dist)
+        spans.append((int(start), int(end), readjust))
+    return spans
+
+
+def _foot_moves(frames: pd.DataFrame, side: str, cfg: MetricConfig) -> tuple[int, int]:
+    """(moves, readjustments) for one foot; see foot_move_spans."""
+    spans = foot_move_spans(frames, side, cfg)
+    return len(spans), sum(readjust for _, _, readjust in spans)
+
+
+def pause_spans(frames: pd.DataFrame, cfg: MetricConfig) -> list[tuple[int, int]]:
+    """(start_row, end_row_exclusive) of stretches where the hips stay slower than
+    pause_speed for at least pause_min_s."""
+    speed = frames["hip_speed_tlps"].to_numpy()
+    t = frames["t_s"].to_numpy()
+    return [(int(start), int(end))
+            for start, end in _runs(np.nan_to_num(speed, nan=np.inf) < cfg.pause_speed)
+            if t[end - 1] - t[start] >= cfg.pause_min_s]
 
 
 def _pauses(frames: pd.DataFrame, cfg: MetricConfig) -> list[float]:
-    """Durations (s) of stretches where the hips stay slower than pause_speed."""
-    speed = frames["hip_speed_tlps"].to_numpy()
+    """Durations (s) of the pauses found by pause_spans."""
     t = frames["t_s"].to_numpy()
-    out = []
-    for start, end in _runs(np.nan_to_num(speed, nan=np.inf) < cfg.pause_speed):
-        dur = t[end - 1] - t[start]
-        if dur >= cfg.pause_min_s:
-            out.append(float(dur))
-    return out
+    return [float(t[end - 1] - t[start]) for start, end in pause_spans(frames, cfg)]
 
 
 def _hip_path(frames: pd.DataFrame) -> tuple[float, float, float]:

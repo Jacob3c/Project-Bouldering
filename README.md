@@ -139,3 +139,23 @@ Writes a per-frame table and a one-row-per-attempt summary to `data/processed/me
 | `hip_mean_jerk` | Mean jerk of the hip path; lower = smoother |
 
 Distances are in torso lengths (shoulder midpoint to hip midpoint), so clips filmed from different distances are comparable. Thresholds are in `MetricConfig` and are stored with every attempt row.
+
+## Feedback video
+
+```bash
+python -m boulder.render.feedback data/raw/<clip>.mov
+```
+
+Draws the climber's skeleton on the clip: green during the climb, grey before and after it.
+A limb turns red when a rule flags it, and the flag is named in the top-left corner. A timeline
+at the bottom marks every flagged moment, with a white cursor for the current frame.
+
+| Flag | Rule (thresholds in `FeedbackConfig` and `MetricConfig`) |
+| --- | --- |
+| bent arm (red arm) | elbow < 150 degrees for at least 1.5 s in a row |
+| foot readjust (red leg) | a foot move shorter than 0.3 torso lengths; shown for at least 0.5 s |
+| pause (orange body) | hips still for at least 1 s; tripod clips only |
+
+Run pose, quality and metrics first. Writes `data/output/<video_id>_feedback.mp4` and one row per
+flagged event to `data/processed/feedback/camera=<c>/model=<m>/<video_id>.parquet`, then prints the
+events with their clip times.
