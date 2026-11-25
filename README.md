@@ -14,7 +14,8 @@ project-bouldering/
 │   ├── transforms/       # movement metrics
 │   ├── quality/          # data-quality checks
 │   ├── render/           # skeleton-overlay feedback videos
-│   └── pipeline/         # orchestration
+│   ├── pipeline/         # all stages for one clip
+│   └── api/              # HTTP API for the app
 ├── data/                 # local only, never committed
 │   ├── raw/              # tripod footage
 │   ├── test/             # handheld / test clips
@@ -159,3 +160,36 @@ at the bottom marks every flagged moment, with a white cursor for the current fr
 Run pose, quality and metrics first. Writes `data/output/<video_id>_feedback.mp4` and one row per
 flagged event to `data/processed/feedback/camera=<c>/model=<m>/<video_id>.parquet`, then prints the
 events with their clip times and the share of the climb that was red.
+
+## API
+
+The API is what the phone app will talk to: upload a clip with its facts, then fetch the
+metrics and the feedback video. Start it from the repo root:
+
+```bash
+pip install -e ".[dev]"                 # once: adds fastapi, uvicorn, python-multipart, httpx2
+uvicorn boulder.api.app:app --reload    # --reload restarts the server when code changes
+```
+
+Open http://127.0.0.1:8000/docs for interactive docs: every endpoint can be tried in the browser.
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/health` | `{"status": "ok"}` when the server is up |
+| POST | `/clips` | upload a video + date, gym, colour, grade, outcome, camera (+ optional climb times, wall style, notes); returns a `job_id` (202) |
+| GET | `/jobs/{job_id}` | `queued`, `running` (with the current `step`), `done` or `failed` (with the `error`) |
+| GET | `/clips` | every ingested clip, newest first, with `has_feedback` |
+| GET | `/clips/{clip_id}` | facts, quality report, metrics and feedback events for one clip |
+| GET | `/clips/{clip_id}/video` | the feedback video (mp4) |
+
+An upload passes the same checks as `boulder.ingest.run` (bad gym, colour or grade -> 422; a
+different video with the same ID -> 409), and its climb window and wall style are appended to
+`metadata/attempts.csv`. Processing runs in the background, one clip at a time:
+pose -> quality -> metrics -> feedback. The same chain runs from the command line for one clip:
+
+```bash
+python -m boulder.pipeline.clip data/raw/<clip>.mov --start 4 --end 42
+```
+
+Limits for now: local only (no accounts or login), jobs are kept in memory and lost on restart.
+

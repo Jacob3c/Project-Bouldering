@@ -91,3 +91,12 @@ Short entries: what was decided, why, and what else was considered.
 - **Decision:** `FeedbackConfig.bent_arm_deg = 120` (clearly bent) and `bent_arm_min_s = 2.0`. The metrics' 150-degree straight-arm share is unchanged. The command now prints the red share of the climb, to compare settings.
 - **Next:** rerender all 6 clips; aim for red on a minority of the climb, on moments that look wrong by eye.
 
+## 2026-11-25 - API for the phone app (FastAPI)
+- **Decision:** the goal is a phone app, not a website. The app stays thin and the Python pipeline becomes a server: `boulder.api` (FastAPI) takes an upload plus the clip's facts, runs every stage in the background and serves the metrics, events and feedback video. `boulder.pipeline.clip.process_clip` chains the stages for one clip; the command-line tools still run one stage over many clips and write the same files.
+- **Why FastAPI:** Python like the pipeline, request checks from type hints, and free interactive docs at `/docs`, which also serve as the contract for the app.
+- **Uploads go through ingest:** the facts become a canonical file name and `boulder.ingest.run.ingest` checks it, so names, duplicates and the manifest follow one set of rules. The climb window and wall style are appended to `metadata/attempts.csv`, so a later command-line rerun uses the same window.
+- **Jobs:** processing takes minutes (pose), so `POST /clips` returns 202 with a job id at once and the app polls `GET /jobs/{id}`. Jobs live in memory and one pipeline runs at a time.
+- **Refactors:** `quality.run.check_file` and `render.feedback.make_feedback` do one clip, so the pipeline can call them; their commands behave as before.
+- **Considered:** a task queue (Celery/Redis) and a database for jobs: right for many users, too much for one local user now.
+- **Next:** run the API from the phone on the same Wi-Fi; then pick the app stack (iPhone or Android); later persist jobs and add accounts before anyone else uses it.
+

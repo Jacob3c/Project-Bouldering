@@ -25,6 +25,22 @@ KEYPOINT_ROOT = Path("data/processed/keypoints")
 QUALITY_ROOT = Path("data/processed/quality")
 
 
+def check_file(kp_path: Path, out_root: Path = QUALITY_ROOT,
+               cfg: QualityConfig | None = None) -> dict:
+    """Run the checks on one keypoint file, write its points and clip report, return the report."""
+    cfg = cfg or QualityConfig()
+    camera = kp_path.parent.parent.name.removeprefix("camera=")
+    rel = Path(kp_path.parent.parent.name) / kp_path.parent.name / kp_path.name
+    points, _, report = check_clip(pd.read_parquet(kp_path), camera, cfg)
+    report = {"clip_id": kp_path.stem, "camera": camera, **report,
+              "quality_config": json.dumps(cfg.to_dict(), sort_keys=True)}
+    for kind, df in (("points", points), ("clips", pd.DataFrame([report]))):
+        path = out_root / kind / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(path, index=False)
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -39,18 +55,7 @@ def main() -> None:
     if not files:
         raise SystemExit(f"no keypoint files for model={args.model} camera={args.camera}")
 
-    rows = []
-    for f in files:
-        camera = f.parent.parent.name.removeprefix("camera=")
-        rel = Path(f.parent.parent.name) / f.parent.name / f.name
-        points, _, report = check_clip(pd.read_parquet(f), camera, cfg)
-        report = {"clip_id": f.stem, "camera": camera, **report,
-                  "quality_config": json.dumps(cfg.to_dict(), sort_keys=True)}
-        for kind, df in (("points", points), ("clips", pd.DataFrame([report]))):
-            path = args.out / kind / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            df.to_parquet(path, index=False)
-        rows.append(report)
+    rows = [check_file(f, args.out, cfg) for f in files]
 
     pd.set_option("display.width", 200)
     table = pd.DataFrame(rows).set_index("clip_id")

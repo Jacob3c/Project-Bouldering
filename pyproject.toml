@@ -18,11 +18,15 @@ dependencies = [
     "pyarrow",         # Parquet storage
     "duckdb",          # local SQL over Parquet
     "pyyaml",          # reads configs/*.yaml
+    "fastapi",         # HTTP API (boulder.api)
+    "uvicorn[standard]",  # runs the API server
+    "python-multipart",   # lets FastAPI read file uploads
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "httpx2",          # FastAPI's TestClient (Starlette dropped plain httpx)
     "ruff",
     "jupyterlab",
 ]
