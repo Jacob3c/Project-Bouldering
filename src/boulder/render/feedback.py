@@ -292,6 +292,49 @@ def _fmt(s: float) -> str:
     return f"{int(s // 60)}:{s % 60:04.1f}"
 
 
+def make_feedback(video_path: Path, model: str = "rtmpose-feet", conf: float = 0.5,
+                  scale: float = 0.5, out: Path | None = None) -> dict:
+    """Render the feedback video and save its event table for one clip.
+
+    Returns {"video": path, "events_path": path, "events": DataFrame, "red_share": float,
+    "camera": str}. Raises FileNotFoundError when keypoints or metrics are missing.
+    """
+    video_path = Path(video_path)
+    stem = video_path.stem
+    kp_path = _find(KEYPOINT_ROOT, model, stem)
+    frames_path = _find(METRIC_ROOT / "frames", model, stem)
+    if kp_path is None:
+        raise FileNotFoundError(f"no keypoints for {stem} (run boulder.pose.run first)")
+    if frames_path is None:
+        raise FileNotFoundError(f"no metrics for {stem} (run boulder.transforms.run first)")
+
+    keypoints = pd.read_parquet(kp_path)
+    quality_path = _find(QUALITY_ROOT, model, stem)
+    if quality_path is not None:  # hide points the quality checks rejected
+        from boulder.transforms.prepare import apply_point_quality
+        keypoints, _ = apply_point_quality(keypoints, pd.read_parquet(quality_path))
+
+    camera = parse_clip_name(video_path).camera
+    cfg = _saved_config(_find(METRIC_ROOT / "attempts", model, stem))
+    frames = pd.read_parquet(frames_path)
+    flags = feedback_flags(frames, cfg, fixed_camera=camera == "tripod")
+    # frames t_s starts at 0 at the window start; shift back to clip time
+    clip_t0 = float(frames["timestamp_ms"].iloc[0]) / 1000 if len(frames) else 0.0
+    events = flag_events(flags)
+    events[["start_s", "end_s"]] += clip_t0
+
+    events_out = FEEDBACK_ROOT / kp_path.relative_to(KEYPOINT_ROOT)
+    events_out.parent.mkdir(parents=True, exist_ok=True)
+    events.insert(0, "video_id", stem)
+    events.to_parquet(events_out, index=False)
+
+    out = out or OUTPUT_DIR / f"{stem}_feedback.mp4"
+    render_feedback(video_path, poses_by_frame(keypoints), flags, out, conf, scale)
+    share = float(flags[FLAGS].any(axis=1).mean()) if len(flags) else 0.0
+    return {"video": out, "events_path": events_out, "events": events, "red_share": share,
+            "camera": camera}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -302,45 +345,17 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
-    stem = args.video.stem
-    kp_path = _find(KEYPOINT_ROOT, args.model, stem)
-    frames_path = _find(METRIC_ROOT / "frames", args.model, stem)
-    if kp_path is None:
-        parser.error(f"no keypoints for {stem} (run boulder.pose.run first)")
-    if frames_path is None:
-        parser.error(f"no metrics for {stem} (run boulder.transforms.run first)")
-
-    keypoints = pd.read_parquet(kp_path)
-    quality_path = _find(QUALITY_ROOT, args.model, stem)
-    if quality_path is not None:  # hide points the quality checks rejected
-        from boulder.transforms.prepare import apply_point_quality
-        keypoints, _ = apply_point_quality(keypoints, pd.read_parquet(quality_path))
-
-    camera = parse_clip_name(args.video).camera
-    cfg = _saved_config(_find(METRIC_ROOT / "attempts", args.model, stem))
-    frames = pd.read_parquet(frames_path)
-    # frames t_s starts at 0 at the window start; shift back to clip time for printing
-    flags = feedback_flags(frames, cfg, fixed_camera=camera == "tripod")
-    clip_t0 = float(frames["timestamp_ms"].iloc[0]) / 1000 if len(frames) else 0.0
-    events = flag_events(flags)
-    events[["start_s", "end_s"]] += clip_t0
-
-    rel = kp_path.relative_to(KEYPOINT_ROOT)
-    events_out = FEEDBACK_ROOT / rel
-    events_out.parent.mkdir(parents=True, exist_ok=True)
-    events.insert(0, "video_id", stem)
-    events.to_parquet(events_out, index=False)
-
-    out = args.out or OUTPUT_DIR / f"{stem}_feedback.mp4"
-    render_feedback(args.video, poses_by_frame(keypoints), flags, out, args.conf, args.scale)
-
-    share = float(flags[FLAGS].any(axis=1).mean()) if len(flags) else 0.0
-    print(f"wrote {out}")
-    print(f"red during {share:.0%} of the climb")
-    print(f"wrote {events_out} ({len(events)} events)")
+    try:
+        result = make_feedback(args.video, args.model, args.conf, args.scale, args.out)
+    except FileNotFoundError as err:
+        parser.error(str(err))
+    events = result["events"]
+    print(f"wrote {result['video']}")
+    print(f"red during {result['red_share']:.0%} of the climb")
+    print(f"wrote {result['events_path']} ({len(events)} events)")
     for e in events.itertuples(index=False):
         print(f"  {_fmt(e.start_s)}  {LABELS[e.flag]:<20} {e.duration_s:.1f} s")
-    if camera != "tripod":
+    if result["camera"] != "tripod":
         print("pauses not shown: they need a tripod clip")
 
 
