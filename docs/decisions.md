@@ -85,3 +85,9 @@ Short entries: what was decided, why, and what else was considered.
 - **Known limits:** thresholds are first guesses; 2D elbow angles mislabel arms pointing at the camera; no flag yet for a fall or a slow move.
 - **Next:** check the videos by eye, tune `bent_arm_min_s`; then an API (FastAPI) so a phone app can upload a clip and get the feedback video back. The goal is now a mobile app, not a website.
 
+## 2026-11-24 - Bent-arm flag: clearly bent, held 2 s
+- **Evidence:** first feedback video (MainRec Orange V5-6, handheld) was red during 65% of the climb; the timeline was almost solid red, mostly "arm bent".
+- **Cause:** the flag reused the metrics' straight-arm line (150 degrees), so a slightly bent arm counted as bent, and 1.5 s is shorter than many normal moves.
+- **Decision:** `FeedbackConfig.bent_arm_deg = 120` (clearly bent) and `bent_arm_min_s = 2.0`. The metrics' 150-degree straight-arm share is unchanged. The command now prints the red share of the climb, to compare settings.
+- **Next:** rerender all 6 clips; aim for red on a minority of the climb, on moments that look wrong by eye.
+

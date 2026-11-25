@@ -14,8 +14,9 @@ Writes:
     data/processed/feedback/camera=<c>/model=<m>/<video_id>.parquet   one row per flagged event
 
 What turns red (rules are first guesses, thresholds in FeedbackConfig):
-    bent arm      elbow below straight_arm_deg for at least bent_arm_min_s in a row.
-                  Hanging on bent arms tires you out; straight arms rest on the skeleton.
+    bent arm      elbow below bent_arm_deg (clearly bent) for at least bent_arm_min_s
+                  in a row. Hanging on bent arms tires you out; straight arms rest on
+                  the skeleton. Slightly bent arms and quick pulls are not flagged.
     foot readjust a foot move shorter than readjust_max_dist (a shuffle, not a step).
                   The foot stays red for flag_hold_s after the move so it can be seen.
     pause         hips still for pause_min_s (orange body). Tripod clips only: with a
@@ -69,7 +70,8 @@ LABELS = {
 
 @dataclass
 class FeedbackConfig:
-    bent_arm_min_s: float = 1.5   # elbow bent at least this long in a row = flagged
+    bent_arm_deg: float = 120.0   # elbow below this = clearly bent (150 = metrics' "straight")
+    bent_arm_min_s: float = 2.0   # clearly bent at least this long in a row = flagged
     flag_hold_s: float = 0.5      # keep a short flag (foot readjust) visible at least this long
 
     def to_dict(self) -> dict:
@@ -115,7 +117,7 @@ def feedback_flags(frames: pd.DataFrame, cfg: MetricConfig | None = None,
     n = len(out)
 
     for side in ("left", "right"):
-        bent = (frames[f"{side}_elbow_deg"] < cfg.straight_arm_deg).to_numpy()  # NaN -> False
+        bent = (frames[f"{side}_elbow_deg"] < fcfg.bent_arm_deg).to_numpy()  # NaN -> False
         flag = np.zeros(n, dtype=bool)
         for start, end in _runs(bent):
             if t[end - 1] - t[start] >= fcfg.bent_arm_min_s:
@@ -332,7 +334,9 @@ def main() -> None:
     out = args.out or OUTPUT_DIR / f"{stem}_feedback.mp4"
     render_feedback(args.video, poses_by_frame(keypoints), flags, out, args.conf, args.scale)
 
+    share = float(flags[FLAGS].any(axis=1).mean()) if len(flags) else 0.0
     print(f"wrote {out}")
+    print(f"red during {share:.0%} of the climb")
     print(f"wrote {events_out} ({len(events)} events)")
     for e in events.itertuples(index=False):
         print(f"  {_fmt(e.start_s)}  {LABELS[e.flag]:<20} {e.duration_s:.1f} s")
