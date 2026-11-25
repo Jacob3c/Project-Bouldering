@@ -1,5 +1,7 @@
 """Feedback flags and renderer, tested on synthetic skeletons."""
 
+import math
+
 import cv2
 import numpy as np
 import pandas as pd
@@ -19,8 +21,8 @@ from boulder.transforms.metrics import frame_metrics
 FPS = 30
 
 
-def _skeleton(hip_y=1000.0, bent=False, left_foot=(450.0, 1300.0)):
-    """Torso 200 px; arms straight up unless bent (90 degree elbows)."""
+def _skeleton(hip_y=1000.0, bent=False, left_foot=(450.0, 1300.0), elbow_deg=None):
+    """Torso 200 px; arms straight up unless bent (90 degree elbows) or elbow_deg given."""
     hx, sh_y = 500.0, hip_y - 200
     pts = {
         "left_shoulder": (hx - 50, sh_y), "right_shoulder": (hx + 50, sh_y),
@@ -31,7 +33,9 @@ def _skeleton(hip_y=1000.0, bent=False, left_foot=(450.0, 1300.0)):
     }
     for side, sx in (("left", hx - 50), ("right", hx + 50)):
         pts[f"{side}_elbow"] = (sx, sh_y - 120)
-        pts[f"{side}_wrist"] = (sx + 120, sh_y - 120) if bent else (sx, sh_y - 240)
+        deg = elbow_deg if elbow_deg is not None else 90.0 if bent else 180.0
+        a = math.radians(deg)  # angle between forearm and the upper arm's line down to the shoulder
+        pts[f"{side}_wrist"] = (sx + 120 * math.sin(a), sh_y - 120 + 120 * math.cos(a))
     return pts
 
 
@@ -50,13 +54,20 @@ def test_long_bent_arm_flagged_short_one_not():
     seq = [_skeleton() for _ in range(FPS)]
     seq += [_skeleton(bent=True) for _ in range(FPS)]        # 1 s bent: allowed
     seq += [_skeleton() for _ in range(FPS)]
-    seq += [_skeleton(bent=True) for _ in range(2 * FPS)]    # 2 s bent: flagged
+    seq += [_skeleton(bent=True) for _ in range(3 * FPS)]    # 3 s bent: flagged
     seq += [_skeleton() for _ in range(FPS)]
     flags = _flags(seq)
     assert not flags["left_arm_bent"].iloc[FPS:2 * FPS].any()
-    assert flags["left_arm_bent"].iloc[3 * FPS + 10:5 * FPS - 10].all()
+    assert flags["left_arm_bent"].iloc[3 * FPS + 10:6 * FPS - 10].all()
     events = flag_events(flags)
     assert (events["flag"] == "left_arm_bent").sum() == 1
+
+
+def test_slightly_bent_arm_not_flagged():
+    flags = _flags([_skeleton(elbow_deg=135) for _ in range(4 * FPS)])  # under 150, over 120
+    assert not flags["left_arm_bent"].any()
+    flags = _flags([_skeleton(elbow_deg=100) for _ in range(4 * FPS)])
+    assert flags["left_arm_bent"].all()
 
 
 def test_readjustment_flagged_real_step_not():
@@ -101,11 +112,11 @@ def test_flagged_arm_drawn_red():
 def test_render_feedback_writes_every_frame(tmp_path):
     video = tmp_path / "clip.avi"
     writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*"MJPG"), FPS, (120, 160))
-    for _ in range(40):
+    for _ in range(80):
         writer.write(np.zeros((160, 120, 3), dtype=np.uint8))
     writer.release()
 
-    seq = [_skeleton(bent=True) for _ in range(40)]
+    seq = [_skeleton(bent=True) for _ in range(80)]
     kp = _keypoints(seq)
     kp[["x_px", "y_px"]] /= 10
     flags = feedback_flags(frame_metrics(kp))
@@ -114,4 +125,4 @@ def test_render_feedback_writes_every_frame(tmp_path):
     n = 0
     while cap.read()[0]:
         n += 1
-    assert n == 40
+    assert n == 80
