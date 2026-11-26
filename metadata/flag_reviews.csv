@@ -1,0 +1,122 @@
+video_id,flag,start,end,verdict,mistake,note,source
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:05.1,0:05.6,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_arm_bent,0:06.4,0:08.6,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_arm_bent,0:09.3,0:13.8,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:09.8,0:10.3,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:11.1,0:11.6,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:11.7,0:12.2,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:13.4,0:13.9,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:17.7,0:18.2,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_arm_bent,0:17.9,0:23.2,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:19.3,0:19.8,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:22.9,0:23.4,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:23.9,0:24.4,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:24.2,0:25.0,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:24.4,0:24.9,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:25.2,0:25.7,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:25.3,0:25.8,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:25.9,0:26.4,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:26.7,0:27.2,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:27.3,0:27.8,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_arm_bent,0:04.0,0:07.3,correct,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:05.1,0:05.6,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:06.3,0:06.8,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:06.6,0:07.1,correct,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:07.9,0:08.3,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:08.7,0:09.7,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:09.7,0:10.2,correct,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_arm_bent,0:10.9,0:15.2,correct,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:11.1,0:11.6,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:13.7,0:14.2,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:14.5,0:15.5,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:15.6,0:16.1,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:16.6,0:17.1,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_foot_readjust,0:17.2,0:17.7,wrong,,,auto
+2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,left_foot_readjust,0:17.4,0:17.9,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:06.0,0:06.5,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_arm_bent,0:06.1,0:08.4,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:06.6,0:07.1,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:06.9,0:07.8,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:07.6,0:08.1,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:08.2,0:08.7,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_arm_bent,0:10.0,0:13.0,wrong,,no load,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:10.6,0:11.1,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:11.4,0:11.9,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:12.4,0:12.9,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_arm_bent,0:13.3,0:19.2,wrong,,no load,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:20.6,0:21.1,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:20.6,0:21.1,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:21.7,0:22.1,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:23.0,0:23.5,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:23.0,0:23.5,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:24.0,0:24.5,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:24.6,0:25.4,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:25.3,0:25.7,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:27.0,0:27.5,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:28.2,0:29.3,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:32.2,0:33.2,wrong,,foot slips,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_arm_bent,0:05.0,0:09.2,correct,no,lock off,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_arm_bent,0:15.5,0:19.1,correct,no,lock off,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_foot_readjust,0:15.8,0:16.3,wrong,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,left_foot_readjust,0:16.3,0:16.8,correct,,not on hold,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,left_foot_readjust,0:17.2,0:17.7,correct,,not on hold,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_foot_readjust,0:18.6,0:19.5,wrong,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_foot_readjust,0:19.9,0:20.4,wrong,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,left_foot_readjust,0:20.1,0:20.6,wrong,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,left_arm_bent,0:20.1,0:23.6,correct,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,left_foot_readjust,0:23.1,0:23.6,wrong,,,auto
+2026-10-28_MainRec_Green-V3-4_att01_send_handheld,right_foot_readjust,0:23.4,0:23.9,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:05.5,0:09.1,correct,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:09.3,0:13.9,correct,no,no load,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.5,0:12.0,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_arm_bent,0:13.5,0:17.0,correct,no,no load,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:13.5,0:14.0,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:16.4,0:16.9,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:17.8,0:25.0,correct,no,no load,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:17.9,0:18.4,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:23.3,0:23.4,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:24.1,0:24.6,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:24.2,0:24.7,correct,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:25.2,0:25.7,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:27.6,0:28.1,correct,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:27.7,0:28.7,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:28.4,0:28.9,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:29.3,0:29.8,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:30.4,0:31.5,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:30.5,0:33.2,correct,no,lock off,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_arm_bent,0:31.5,0:36.9,correct,no,no load,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:32.2,0:32.7,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:34.0,0:41.6,correct,no,no load,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:34.5,0:35.0,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:35.9,0:36.4,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:40.8,0:41.3,correct,,foot not on wall,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.1,0:41.6,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.9,0:42.0,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:09.3,0:09.7,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.0,0:11.5,correct,no,necessary reposition,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.9,0:12.3,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:12.3,0:13.1,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:12.5,0:13.0,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:15.3,0:15.7,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:16.9,0:17.4,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_arm_bent,0:24.4,0:26.9,correct,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:25.7,0:26.2,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:26.2,0:26.6,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:26.9,0:27.4,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:28.0,0:28.8,correct,no,foot swap,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:30.9,0:31.4,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:31.4,0:31.9,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:31.5,0:33.1,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:33.3,0:33.8,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:33.7,0:34.2,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:34.4,0:34.9,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:34.5,0:35.0,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_arm_bent,0:36.5,0:41.4,correct,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_arm_bent,0:40.5,0:45.4,correct,no,lock off,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:41.1,0:41.6,correct,no,foot swap,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_arm_bent,0:41.8,0:45.4,correct,no,lock off,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:42.6,0:43.0,correct,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:42.6,0:43.1,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:45.4,0:46.3,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:45.5,0:45.9,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:48.9,0:49.0,wrong,,smear,auto

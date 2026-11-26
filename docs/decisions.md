@@ -100,3 +100,16 @@ Short entries: what was decided, why, and what else was considered.
 - **Considered:** a task queue (Celery/Redis) and a database for jobs: right for many users, too much for one local user now.
 - **Next:** run the API from the phone on the same Wi-Fi; then pick the app stack (iPhone or Android); later persist jobs and add accounts before anyone else uses it.
 
+## 2026-11-25 - Review log for the feedback flags
+- **Decision:** my verdicts on each flag (correct / wrong / unsure, plus missed moments and coaching notes) go in `metadata/flag_reviews.csv`. `boulder.review.export` fills in new flags without touching reviewed rows; `boulder.review.score` compares verdicts with the current flags per flag type.
+- **Why:** thresholds were tuned by eye from one video. Labelled flags turn tuning into a measurement: a change should lower `wrong` without raising `correct_lost`. The same labels can later train a model (roadmap v3).
+- **Matching:** clip + flag type + overlapping time (0.2 s slack), so verdicts survive small shifts after retuning. Unreviewed rows for flags that disappear are dropped; reviewed rows are never dropped.
+- **Why CSV now:** works today in VS Code next to the video. The iPhone app will write the same fields through the API later.
+- **Next:** review all 6 clips, score, then tune `bent_arm_deg` / `bent_arm_min_s` and the readjustment distance against the labels.
+
+## 2026-11-25 - First review results; verdict = detection, mistake is separate
+- **Evidence** (121 flags, 6 handheld clips, reviewed by me): bent arm 17 correct / 5 wrong (77% precision); foot readjust 25 / 74 (25%). Flag length does not separate right from wrong foot flags (median 0.5 s both), nor does both feet being flagged at once.
+- **Meaning:** `verdict` records whether the detection was right. Of the 17 correct arm flags, 12 were noted lock-off or no load, so most detected bent arms were not mistakes. A separate `mistake` column (yes / no / blank) now holds that judgement, filled from clear notes (13 rows set to `no`).
+- **Decision:** fix foot-readjust detection first, with `boulder.review.calibrate`: it measures the motion behind each reviewed foot flag (which measures separate correct from wrong) and grid-searches `foot_move_speed`, `foot_still_s`, `readjust_max_dist` and the new `move_min_dist` (moves shorter than this are pose jitter; default 0 = old behaviour) against the labels.
+- **Next:** pick a foot setting from the calibration (keep most of the 25 correct, drop most of the 74 wrong), check a few new unreviewed flags, re-export and score. Then a load signal for bent arms (hand still on a hold, number of feet on) to tell lock-offs and relaxed arms from real over-gripping.
+
