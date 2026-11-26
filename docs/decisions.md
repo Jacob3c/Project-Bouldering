@@ -113,3 +113,9 @@ Short entries: what was decided, why, and what else was considered.
 - **Decision:** fix foot-readjust detection first, with `boulder.review.calibrate`: it measures the motion behind each reviewed foot flag (which measures separate correct from wrong) and grid-searches `foot_move_speed`, `foot_still_s`, `readjust_max_dist` and the new `move_min_dist` (moves shorter than this are pose jitter; default 0 = old behaviour) against the labels.
 - **Next:** pick a foot setting from the calibration (keep most of the 25 correct, drop most of the 74 wrong), check a few new unreviewed flags, re-export and score. Then a load signal for bent arms (hand still on a hold, number of feet on) to tell lock-offs and relaxed arms from real over-gripping.
 
+## 2026-11-26 - Foot rule calibrated: speed 1.0 TL/s, still 0.5 s
+- **Evidence** (`boulder.review.calibrate`, 99 reviewed foot flags): the best separating measure is how much faster the flagged foot moves than the other one (AUC 0.73), then the foot's speed in the image (0.71); distance moved does not separate (0.45). Grid over speed, stillness, readjust distance and a new `foot_dominance`: best F1 at `foot_move_speed` 1.0 (was 0.6) and `foot_still_s` 0.5 (was 0.3), dominance 1.0.
+- **Effect on the labels:** keeps 16 of 25 correct flags, shows 21 of 74 wrong ones (precision 25% -> 43%), 7 new unreviewed flags. Holds on 5 of 6 clips; MainRec Orange V5-6 still shows 8 wrong for 2 correct.
+- **Decision:** adopt the two values as defaults. Fewer false reds matter more for feedback than catching every readjust. `foot_dominance` and `move_min_dist` stay at their neutral defaults: they did not help.
+- **Limit:** about 45% precision looks like the ceiling for handheld clips: camera shake makes both feet look like they move. **Next:** tripod footage, then recalibrate; foot_moves / readjustments in the metrics table change with these defaults, so all clips are rerun.
+

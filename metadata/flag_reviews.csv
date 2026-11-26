@@ -5,7 +5,9 @@ video_id,flag,start,end,verdict,mistake,note,source
 2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:09.8,0:10.3,correct,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:11.1,0:11.6,wrong,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:11.7,0:12.2,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:11.7,0:12.2,wrong,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:13.4,0:13.9,wrong,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:16.8,0:17.3,wrong,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:17.7,0:18.2,wrong,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_arm_bent,0:17.9,0:23.2,correct,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:19.3,0:19.8,wrong,,,auto
@@ -16,6 +18,7 @@ video_id,flag,start,end,verdict,mistake,note,source
 2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:25.2,0:25.7,wrong,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:25.3,0:25.8,correct,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:25.9,0:26.4,correct,,,auto
+2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:26.7,0:27.2,correct,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,left_foot_readjust,0:26.7,0:27.2,correct,,,auto
 2026-01-19_ABP_Orange-V3_att01_send_handheld,right_foot_readjust,0:27.3,0:27.8,wrong,,,auto
 2026-09-12_Stone_CO_Purple-V3_att01_send_handheld,right_arm_bent,0:04.0,0:07.3,correct,,,auto
@@ -36,13 +39,17 @@ video_id,flag,start,end,verdict,mistake,note,source
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:06.0,0:06.5,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_arm_bent,0:06.1,0:08.4,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:06.6,0:07.1,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:06.8,0:07.2,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:06.9,0:07.8,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:07.6,0:08.1,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:08.2,0:08.7,wrong,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:08.5,0:09.0,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_arm_bent,0:10.0,0:13.0,wrong,,no load,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:10.6,0:11.1,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:11.4,0:11.9,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:11.6,0:12.1,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:12.4,0:12.9,correct,,,auto
+2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:12.9,0:13.4,wrong,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_arm_bent,0:13.3,0:19.2,wrong,,no load,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,left_foot_readjust,0:20.6,0:21.1,correct,,,auto
 2026-09-18_MainRec_Orange-V3-4_att01_send_handheld,right_foot_readjust,0:20.6,0:21.1,wrong,,,auto
@@ -69,6 +76,7 @@ video_id,flag,start,end,verdict,mistake,note,source
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:05.5,0:09.1,correct,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:09.3,0:13.9,correct,no,no load,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.5,0:12.0,wrong,,,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:13.1,0:13.6,wrong,,"not on wall, should smear",auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_arm_bent,0:13.5,0:17.0,correct,no,no load,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:13.5,0:14.0,wrong,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:16.4,0:16.9,wrong,,,auto
@@ -90,13 +98,16 @@ video_id,flag,start,end,verdict,mistake,note,source
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:34.5,0:35.0,wrong,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:35.9,0:36.4,wrong,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:40.8,0:41.3,correct,,foot not on wall,auto
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:40.9,0:41.4,wrong,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.1,0:41.6,wrong,,,auto
 2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.9,0:42.0,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:09.3,0:09.7,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:10.4,0:10.8,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.0,0:11.5,correct,no,necessary reposition,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.9,0:12.3,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:12.3,0:13.1,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:12.5,0:13.0,wrong,,,auto
+2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:15.0,0:15.5,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:15.3,0:15.7,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:16.9,0:17.4,wrong,,,auto
 2026-11-23_MainRec_Orange-V5-6_att01_send_handheld,right_arm_bent,0:24.4,0:26.9,correct,,,auto

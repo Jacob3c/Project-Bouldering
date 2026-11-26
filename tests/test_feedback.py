@@ -72,7 +72,7 @@ def test_slightly_bent_arm_not_flagged():
 
 def test_readjustment_flagged_real_step_not():
     seq = [_skeleton() for _ in range(FPS)]
-    seq += [_skeleton(left_foot=(450, 1300 - 5 * k)) for k in range(1, 9)]       # shuffle
+    seq += [_skeleton(left_foot=(450, 1300 - 10 * k)) for k in range(1, 5)]       # shuffle
     seq += [_skeleton(left_foot=(450, 1260)) for _ in range(FPS)]
     seq += [_skeleton(left_foot=(450, 1260 - 20 * k)) for k in range(1, 11)]     # real step
     seq += [_skeleton(left_foot=(450, 1060)) for _ in range(FPS)]

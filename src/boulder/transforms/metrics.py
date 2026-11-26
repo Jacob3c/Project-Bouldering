@@ -35,8 +35,8 @@ class MetricConfig:
     smooth_window_s: float = 0.2     # centred rolling mean over positions
     straight_arm_deg: float = 150.0  # elbow angle at or above = straight arm
     foot_reference: str = "other_foot"  # "other_foot" (cancels camera + hip motion) | "frame"
-    foot_move_speed: float = 0.6     # TL/s; foot faster than this = moving
-    foot_still_s: float = 0.3        # foot must be still this long between moves
+    foot_move_speed: float = 1.0     # TL/s; foot faster than this = moving (calibrated 2026-11-26)
+    foot_still_s: float = 0.5        # foot must be still this long between moves (calibrated)
     readjust_max_dist: float = 0.3   # TL; a foot move shorter than this = readjustment
     move_min_dist: float = 0.0       # TL; a "move" shorter than this is jitter, not a move
     foot_dominance: float = 1.0      # a foot is moving only if it moves this many times faster

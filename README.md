@@ -155,7 +155,7 @@ at the bottom marks every flagged moment, with a white cursor for the current fr
 | Flag | Rule (thresholds in `FeedbackConfig` and `MetricConfig`) |
 | --- | --- |
 | bent arm (red arm) | elbow < 120 degrees (clearly bent) for at least 2 s in a row |
-| foot readjust (red leg) | a foot move shorter than 0.3 torso lengths; shown for at least 0.5 s |
+| foot readjust (red leg) | a foot move (gap between the feet changing faster than 1.0 torso lengths/s) shorter than 0.3 torso lengths; shown for at least 0.5 s |
 | pause (orange body) | hips still for at least 1 s; tripod clips only |
 
 Run pose, quality and metrics first. Writes `data/output/<video_id>_feedback.mp4` and one row per

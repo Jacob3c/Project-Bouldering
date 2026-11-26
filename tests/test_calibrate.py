@@ -13,10 +13,10 @@ V = "2026-11-23_MainRec_Orange-V5-6_att01_send_handheld"
 def _clip():
     """A real shuffle at ~1.0 s and an out-and-back jitter at ~2.3 s on the left foot."""
     seq = [_skeleton() for _ in range(FPS)]
-    seq += [_skeleton(left_foot=(450, 1300 - 5 * k)) for k in range(1, 9)]       # 40 px = 0.2 TL
+    seq += [_skeleton(left_foot=(450, 1300 - 10 * k)) for k in range(1, 5)]       # 40 px = 0.2 TL
     seq += [_skeleton(left_foot=(450, 1260)) for _ in range(FPS)]
-    # jitter: the foot point jumps 30 px out and straight back (pose noise, no real move)
-    seq += [_skeleton(left_foot=(450 + d, 1260)) for d in (10, 20, 30, 30, 20, 10)]
+    # jitter: the foot point jumps 60 px out and straight back (pose noise, no real move)
+    seq += [_skeleton(left_foot=(450 + d, 1260)) for d in (20, 40, 60, 60, 40, 20)]
     seq += [_skeleton(left_foot=(450, 1260)) for _ in range(FPS)]
     return frame_metrics(_keypoints(seq))
 
@@ -50,7 +50,7 @@ def test_grid_finds_setting_that_drops_jitter():
     labels = _labels(frames)
     now = evaluate(MetricConfig(), labels, {V: frames})
     assert (now["correct_kept"], now["wrong_shown"]) == (1, 1)
-    grid = {"foot_move_speed": [0.6], "foot_still_s": [0.3], "readjust_max_dist": [0.3],
+    grid = {"foot_move_speed": [1.0], "foot_still_s": [0.5], "readjust_max_dist": [0.3],
             "foot_dominance": [1.0], "move_min_dist": [0.0, 0.1]}
     table = grid_search(MetricConfig(), labels, {V: frames}, grid)
     best = table.iloc[0]

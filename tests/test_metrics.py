@@ -87,8 +87,8 @@ def test_pause_then_climb():
 def test_foot_move_vs_readjustment():
     cfg = MetricConfig()
     seq = [_skeleton() for _ in range(FPS)]                                   # still 1 s
-    # small shuffle: 40 px = 0.2 torso lengths, at 0.75 TL/s
-    seq += [_skeleton(left_foot=(450, 1300 - 5 * k)) for k in range(1, 9)]
+    # small shuffle: 40 px = 0.2 torso lengths, at 1.5 TL/s
+    seq += [_skeleton(left_foot=(450, 1300 - 10 * k)) for k in range(1, 5)]
     seq += [_skeleton(left_foot=(450, 1260)) for _ in range(FPS)]             # still 1 s
     # real move: 200 px = 1 torso length
     seq += [_skeleton(left_foot=(450, 1260 - 20 * k)) for k in range(1, 11)]
