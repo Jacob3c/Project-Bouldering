@@ -38,6 +38,9 @@ class MetricConfig:
     foot_move_speed: float = 0.6     # TL/s; foot faster than this = moving
     foot_still_s: float = 0.3        # foot must be still this long between moves
     readjust_max_dist: float = 0.3   # TL; a foot move shorter than this = readjustment
+    move_min_dist: float = 0.0       # TL; a "move" shorter than this is jitter, not a move
+    foot_dominance: float = 1.0      # a foot is moving only if it moves this many times faster
+                                     # (relative to the hips) than the other foot
     pause_speed: float = 0.15        # TL/s; hip slower than this = paused
     pause_min_s: float = 1.0         # stillness at least this long counts as a pause
 
@@ -185,8 +188,8 @@ def _foot_signal(frames: pd.DataFrame, side: str, cfg: MetricConfig
 
     "frame": the foot's own speed in the image (fooled by a moving camera).
     "other_foot": how fast the gap between the feet changes, credited to this
-    foot only in frames where it moves faster relative to the hips than the
-    other foot does. Camera and hip motion cancel out.
+    foot only in frames where it moves at least foot_dominance times faster
+    relative to the hips than the other foot does. Camera and hip motion cancel out.
     """
     if cfg.foot_reference == "frame":
         return (frames[f"{side}_foot_speed_tlps"].to_numpy(),
@@ -195,7 +198,7 @@ def _foot_signal(frames: pd.DataFrame, side: str, cfg: MetricConfig
     mine = np.nan_to_num(frames[f"{side}_foot_hiprel_speed_tlps"].to_numpy())
     theirs = np.nan_to_num(frames[f"{other}_foot_hiprel_speed_tlps"].to_numpy())
     gap_speed = frames["foot_gap_speed_tlps"].to_numpy()
-    speed = np.where(mine >= theirs, gap_speed, 0.0)
+    speed = np.where(mine >= cfg.foot_dominance * theirs, gap_speed, 0.0)
     speed[np.isnan(gap_speed)] = np.nan
     return speed, frames[["foot_gap_x_tl", "foot_gap_y_tl"]].to_numpy()
 
@@ -207,7 +210,8 @@ def foot_move_spans(frames: pd.DataFrame, side: str, cfg: MetricConfig
     A move = a run of frames faster than foot_move_speed (see _foot_signal).
     Moves separated by less than foot_still_s of stillness are merged. A move
     whose start-to-end distance is under readjust_max_dist torso lengths counts
-    as a readjustment. Rows are positions in `frames`, not frame_idx values.
+    as a readjustment; one under move_min_dist is pose jitter and is dropped.
+    Rows are positions in `frames`, not frame_idx values.
     """
     speed, pos = _foot_signal(frames, side, cfg)
     if np.isnan(speed).all():
@@ -224,9 +228,11 @@ def foot_move_spans(frames: pd.DataFrame, side: str, cfg: MetricConfig
     spans = []
     for start, end in merged:
         a, b = pos[max(start - 1, 0)], pos[min(end, len(pos) - 1)]
-        readjust = bool(np.isfinite(a).all() and np.isfinite(b).all()
-                        and np.linalg.norm(b - a) < cfg.readjust_max_dist)
-        spans.append((int(start), int(end), readjust))
+        known = bool(np.isfinite(a).all() and np.isfinite(b).all())
+        dist = float(np.linalg.norm(b - a)) if known else np.nan
+        if known and dist < cfg.move_min_dist:
+            continue
+        spans.append((int(start), int(end), bool(known and dist < cfg.readjust_max_dist)))
     return spans
 
 

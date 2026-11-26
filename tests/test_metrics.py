@@ -156,3 +156,17 @@ def test_format_table_spacing_and_nan():
     header, line = text.splitlines()
     assert line.split() == ["send", "V3", "-"]          # columns never run together
     assert header.index("grade") == line.index("V3")    # values line up under headers
+
+
+def test_foot_dominance_needs_one_foot_clearly_faster():
+    # both feet slide up together (hips swinging, pose drifting); the left only 1.5x faster
+    seq = [_skeleton() for _ in range(FPS)]
+    for k in range(1, 11):
+        f = _skeleton(left_foot=(450, 1300 - 30 * k))
+        f["right_big_toe"] = (550, 1320 - 20 * k)
+        seq.append(f)
+    seq += [seq[-1] for _ in range(FPS)]
+    kp = _keypoints(seq)
+    loose, strict = MetricConfig(foot_dominance=1.0), MetricConfig(foot_dominance=2.0)
+    assert attempt_metrics(frame_metrics(kp, loose), loose)["left_foot_moves"] == 1
+    assert attempt_metrics(frame_metrics(kp, strict), strict)["foot_moves"] == 0

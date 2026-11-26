@@ -15,6 +15,7 @@ project-bouldering/
 │   ├── quality/          # data-quality checks
 │   ├── render/           # skeleton-overlay feedback videos
 │   ├── pipeline/         # all stages for one clip
+│   ├── review/           # your verdicts on feedback flags
 │   └── api/              # HTTP API for the app
 ├── data/                 # local only, never committed
 │   ├── raw/              # tripod footage
@@ -192,4 +193,36 @@ python -m boulder.pipeline.clip data/raw/<clip>.mov --start 4 --end 42
 ```
 
 Limits for now: local only (no accounts or login), jobs are kept in memory and lost on restart.
+
+## Reviewing the flags
+
+Your verdicts on the red flags are the ground truth for tuning the rules. They live in
+`metadata/flag_reviews.csv`, one row per flag:
+
+```bash
+python -m boulder.review.export   # add the latest flags (blank verdicts); keeps what you wrote
+python -m boulder.review.play     # fast review: loops each flag, one key per verdict
+python -m boulder.review.score    # your verdicts vs the current flags, per flag type
+python -m boulder.review.calibrate  # which foot-rule settings fit your verdicts best
+```
+
+In the player, click the video window, then: `c` correct (detection right), `w` wrong (it didn't happen), `u` unsure, `s` skip,
+`n` note (typed in the video window, Enter saves, Esc cancels), `m` missed mistake at this moment, space pause, `,` `.` step a
+frame, `r` replay, `b` back, `q` save and quit. Every key press is saved to the CSV at once.
+
+| Column | Meaning |
+| --- | --- |
+| `video_id` | the clip |
+| `flag` | `left_arm_bent`, `right_arm_bent`, `left_foot_readjust`, `right_foot_readjust`, `pause`, or `other` |
+| `start`, `end` | clip time, m:ss.s as QuickTime shows it (or seconds) |
+| `verdict` | was the detection right: `correct` (it happened), `wrong` (it didn't), `unsure`, or `missed` |
+| `mistake` | was it a mistake: `yes`, `no` (needed or harmless: lock-off, foot swap, no load), blank = not judged |
+| `note` | why, or what you would coach |
+| `source` | `auto` = exported; `you` = a row you added |
+
+Add a mistake the system missed as a new row with `verdict` = `missed`, `source` = `you`, a flag
+type (or `other`) and its time. Rows are matched by clip, flag type and overlapping time, so
+verdicts survive re-rendering after a threshold change. `score` then shows `precision`
+(share of shown flags you called real mistakes), `wrong` (still shown), `correct_lost` (no longer
+shown) and `missed_now_caught`.
 
