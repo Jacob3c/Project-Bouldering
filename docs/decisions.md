@@ -119,3 +119,10 @@ Short entries: what was decided, why, and what else was considered.
 - **Decision:** adopt the two values as defaults. Fewer false reds matter more for feedback than catching every readjust. `foot_dominance` and `move_min_dist` stay at their neutral defaults: they did not help.
 - **Limit:** about 45% precision looks like the ceiling for handheld clips: camera shake makes both feet look like they move. **Next:** tripod footage, then recalibrate; foot_moves / readjustments in the metrics table change with these defaults, so all clips are rerun.
 
+## 2026-11-27 - Hand-still signal for bent arms; fixed test clips
+- **Decision:** metrics now keep wrist positions and `<side>_hand_anchor_speed_tlps`: the hand's speed relative to the other hand and both feet, so camera and body motion cancel. `FeedbackConfig.hand_still_speed` (off by default) flags a bent arm only while that hand stays still, i.e. holds weight on a hold; a reaching arm carries none.
+- **Why off by default:** 12 of 17 correctly detected bent arms were lock-offs or relaxed; the filter is tuned against those labels (`mistake = no`) before it is turned on.
+- **Test split:** `boulder.review.splits` keeps about 1 clip in 4 (by a hash of its ID, overridable in `metadata/splits.csv`) out of tuning. `calibrate` tunes on the rest and reports the best setting on the test clips, so overfitting shows.
+- **CI:** a GitHub Actions workflow runs `pytest` on every PR (`docs/ci-tests.yml`, to be moved to `.github/workflows/`).
+- **Next:** re-run metrics (new columns), calibrate, pick `hand_still_speed` if it raises the share of useful arm flags on the test clips.
+

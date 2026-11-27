@@ -56,3 +56,32 @@ def test_grid_finds_setting_that_drops_jitter():
     best = table.iloc[0]
     assert (best["correct_kept"], best["wrong_shown"]) == (1, 0)
     assert (table["current"] == "<- now").sum() == 1
+
+
+def test_splits_are_stable_and_overridable(tmp_path):
+    from boulder.review.splits import default_split, load_overrides, split_of
+
+    assert default_split(V) == default_split(V)
+    ids = [f"clip{i}" for i in range(400)]
+    share = sum(default_split(i) == "test" for i in ids) / len(ids)
+    assert 0.15 < share < 0.35
+    p = tmp_path / "splits.csv"
+    p.write_text(f"clip_id,split\n{V},test\nother,bogus\n")
+    over = load_overrides(p)
+    assert over == {V: "test"} and split_of(V, over) == "test"
+
+
+def test_arm_grid_runs_and_marks_current():
+    from boulder.review.calibrate import arm_grid_search
+    from boulder.render.feedback import feedback_flags, flag_events
+
+    seq = [_skeleton(bent=True) for _ in range(3 * FPS)]
+    frames = frame_metrics(_keypoints(seq))
+    ev = flag_events(feedback_flags(frames))
+    ev = ev[ev["flag"] == "left_arm_bent"]
+    labels = pd.DataFrame({"video_id": V, "flag": ev["flag"], "start_s": ev["start_s"],
+                           "end_s": ev["end_s"], "verdict": "correct", "mistake": "no"})
+    table = arm_grid_search(labels, {V: frames})
+    assert (table["current"] == "<- now").sum() == 1
+    now = table[table["current"] != ""].iloc[0]
+    assert (now["correct_kept"], now["not_mistake_shown"], now["useful"]) == (1, 1, 0)

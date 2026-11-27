@@ -154,7 +154,7 @@ at the bottom marks every flagged moment, with a white cursor for the current fr
 
 | Flag | Rule (thresholds in `FeedbackConfig` and `MetricConfig`) |
 | --- | --- |
-| bent arm (red arm) | elbow < 120 degrees (clearly bent) for at least 2 s in a row |
+| bent arm (red arm) | elbow < 120 degrees (clearly bent) for at least 2 s in a row; optional `hand_still_speed`: only while the hand stays still on a hold |
 | foot readjust (red leg) | a foot move (gap between the feet changing faster than 1.0 torso lengths/s) shorter than 0.3 torso lengths; shown for at least 0.5 s |
 | pause (orange body) | hips still for at least 1 s; tripod clips only |
 
@@ -203,8 +203,12 @@ Your verdicts on the red flags are the ground truth for tuning the rules. They l
 python -m boulder.review.export   # add the latest flags (blank verdicts); keeps what you wrote
 python -m boulder.review.play     # fast review: loops each flag, one key per verdict
 python -m boulder.review.score    # your verdicts vs the current flags, per flag type
-python -m boulder.review.calibrate  # which foot-rule settings fit your verdicts best
+python -m boulder.review.calibrate  # which rule settings fit your verdicts best (foot, then bent arm)
 ```
+
+About 1 clip in 4 is kept back as a **test** clip (`boulder.review.splits`): `calibrate` tunes on the
+other clips, then scores the best setting on the test clips it never saw. To move a clip by hand,
+list it in `metadata/splits.csv` (`clip_id,split` with split = `tune` or `test`).
 
 In the player, click the video window, then: `c` correct (detection right), `w` wrong (it didn't happen), `u` unsure, `s` skip,
 `n` note (typed in the video window, Enter saves, Esc cancels), `m` missed mistake at this moment, space pause, `,` `.` step a
