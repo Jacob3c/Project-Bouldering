@@ -17,6 +17,8 @@ What turns red (rules are first guesses, thresholds in FeedbackConfig):
     bent arm      elbow below bent_arm_deg (clearly bent) for at least bent_arm_min_s
                   in a row. Hanging on bent arms tires you out; straight arms rest on
                   the skeleton. Slightly bent arms and quick pulls are not flagged.
+                  With hand_still_speed set, only while the hand stays still on a hold
+                  (relative to the other hand and the feet): a reaching arm carries no weight.
     foot readjust a foot move shorter than readjust_max_dist (a shuffle, not a step).
                   The foot stays red for flag_hold_s after the move so it can be seen.
     pause         hips still for pause_min_s (orange body). Tripod clips only: with a
@@ -72,6 +74,8 @@ LABELS = {
 class FeedbackConfig:
     bent_arm_deg: float = 120.0   # elbow below this = clearly bent (150 = metrics' "straight")
     bent_arm_min_s: float = 2.0   # clearly bent at least this long in a row = flagged
+    hand_still_speed: float | None = None  # TL/s; set = only flag while the hand is this still
+                                           # (None = off until calibrated on your labels)
     flag_hold_s: float = 0.5      # keep a short flag (foot readjust) visible at least this long
 
     def to_dict(self) -> dict:
@@ -118,6 +122,9 @@ def feedback_flags(frames: pd.DataFrame, cfg: MetricConfig | None = None,
 
     for side in ("left", "right"):
         bent = (frames[f"{side}_elbow_deg"] < fcfg.bent_arm_deg).to_numpy()  # NaN -> False
+        hand_col = f"{side}_hand_anchor_speed_tlps"
+        if fcfg.hand_still_speed is not None and hand_col in frames.columns:
+            bent = bent & (frames[hand_col] < fcfg.hand_still_speed).to_numpy()  # NaN -> not still
         flag = np.zeros(n, dtype=bool)
         for start, end in _runs(bent):
             if t[end - 1] - t[start] >= fcfg.bent_arm_min_s:

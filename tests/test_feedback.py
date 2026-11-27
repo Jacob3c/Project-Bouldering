@@ -72,7 +72,7 @@ def test_slightly_bent_arm_not_flagged():
 
 def test_readjustment_flagged_real_step_not():
     seq = [_skeleton() for _ in range(FPS)]
-    seq += [_skeleton(left_foot=(450, 1300 - 5 * k)) for k in range(1, 9)]       # shuffle
+    seq += [_skeleton(left_foot=(450, 1300 - 10 * k)) for k in range(1, 5)]       # shuffle
     seq += [_skeleton(left_foot=(450, 1260)) for _ in range(FPS)]
     seq += [_skeleton(left_foot=(450, 1260 - 20 * k)) for k in range(1, 11)]     # real step
     seq += [_skeleton(left_foot=(450, 1060)) for _ in range(FPS)]
@@ -126,3 +126,21 @@ def test_render_feedback_writes_every_frame(tmp_path):
     while cap.read()[0]:
         n += 1
     assert n == 80
+
+
+def test_hand_still_filter_skips_reaching_arm():
+    from boulder.render.feedback import FeedbackConfig
+
+    # left arm bent 3 s; in the second clip the left hand keeps moving (reaching)
+    still = [_skeleton(bent=True) for _ in range(3 * FPS)]
+    reach = []
+    for k in range(3 * FPS):
+        f = _skeleton(bent=True)
+        x, y = f["left_wrist"]
+        f["left_wrist"] = (x, y - 3 * k)      # hand slides up the wall, 90 px/s
+        f["left_elbow"] = (f["left_elbow"][0], f["left_elbow"][1] - 3 * k)
+        reach.append(f)
+    cfg = FeedbackConfig(hand_still_speed=0.3)
+    assert _flags(still, fcfg=cfg)["left_arm_bent"].any()
+    assert not _flags(reach, fcfg=cfg)["left_arm_bent"].any()
+    assert _flags(reach)["left_arm_bent"].any()      # filter off by default

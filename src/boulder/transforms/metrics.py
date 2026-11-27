@@ -22,6 +22,7 @@ fix and need a fixed (tripod) camera; see FIXED_CAMERA_METRICS.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import asdict, dataclass
 
 import numpy as np
@@ -35,8 +36,8 @@ class MetricConfig:
     smooth_window_s: float = 0.2     # centred rolling mean over positions
     straight_arm_deg: float = 150.0  # elbow angle at or above = straight arm
     foot_reference: str = "other_foot"  # "other_foot" (cancels camera + hip motion) | "frame"
-    foot_move_speed: float = 0.6     # TL/s; foot faster than this = moving
-    foot_still_s: float = 0.3        # foot must be still this long between moves
+    foot_move_speed: float = 1.0     # TL/s; foot faster than this = moving (calibrated 2026-11-26)
+    foot_still_s: float = 0.5        # foot must be still this long between moves (calibrated)
     readjust_max_dist: float = 0.3   # TL; a foot move shorter than this = readjustment
     move_min_dist: float = 0.0       # TL; a "move" shorter than this is jitter, not a move
     foot_dominance: float = 1.0      # a foot is moving only if it moves this many times faster
@@ -163,6 +164,8 @@ def frame_metrics(keypoints: pd.DataFrame, cfg: MetricConfig | None = None) -> p
         foot = _xy(wide, foot_name) / scale if foot_name else np.full((len(wide), 2), np.nan)
         out[f"{side}_foot_x_tl"], out[f"{side}_foot_y_tl"] = foot[:, 0], foot[:, 1]
         out[f"{side}_foot_speed_tlps"] = _speed(foot, t_s)
+        wrist = _xy(wide, f"{side}_wrist") / scale
+        out[f"{side}_wrist_x_tl"], out[f"{side}_wrist_y_tl"] = wrist[:, 0], wrist[:, 1]
 
     hip = hip_mid / scale
     out["hip_x_tl"], out["hip_y_tl"] = hip[:, 0], hip[:, 1]
@@ -177,6 +180,19 @@ def frame_metrics(keypoints: pd.DataFrame, cfg: MetricConfig | None = None) -> p
     for side in ("left", "right"):  # foot speed relative to the hips: says WHICH foot moved
         rel = out[[f"{side}_foot_x_tl", f"{side}_foot_y_tl"]].to_numpy() - hip
         out[f"{side}_foot_hiprel_speed_tlps"] = _speed(rel, t_s)
+    # Hand speed relative to the other three limbs (other hand, both feet). A hand
+    # resting on a hold stays put relative to the other holds, even when the camera
+    # or the body moves; a reaching hand does not.
+    for side in ("left", "right"):
+        other = "right" if side == "left" else "left"
+        hand = out[[f"{side}_wrist_x_tl", f"{side}_wrist_y_tl"]].to_numpy()
+        others = np.stack([out[[f"{other}_wrist_x_tl", f"{other}_wrist_y_tl"]].to_numpy(),
+                           out[["left_foot_x_tl", "left_foot_y_tl"]].to_numpy(),
+                           out[["right_foot_x_tl", "right_foot_y_tl"]].to_numpy()])
+        with np.errstate(invalid="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)  # all three missing -> NaN
+            anchor = np.nanmean(others, axis=0)
+        out[f"{side}_hand_anchor_speed_tlps"] = _speed(hand - anchor, t_s)
     return out
 
 

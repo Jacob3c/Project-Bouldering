@@ -1,8 +1,11 @@
-"""Tune the foot-readjust rule against your reviewed flags.
+"""Tune the feedback rules against your reviewed flags.
 
 Usage:
-    python -m boulder.review.calibrate             # features + best settings for foot readjust
+    python -m boulder.review.calibrate             # foot readjust, then bent arm
     python -m boulder.review.calibrate --top 20
+
+Settings are tuned on "tune" clips only; the best one is then scored on the "test"
+clips it never saw (boulder.review.splits). A big drop on test = overfit.
 
 Your verdicts in metadata/flag_reviews.csv say whether each flag's detection was right
 ("correct") or not ("wrong"). This tool:
@@ -35,10 +38,18 @@ from boulder.render.feedback import FeedbackConfig, feedback_flags, flag_events
 from boulder.transforms.metrics import MetricConfig, foot_move_spans
 
 from .flags import REVIEW_PATH, clean_reviews, read_reviews
+from .splits import load_overrides, split_of
 
 METRIC_ROOT = Path("data/processed/metrics")
 MODEL = "rtmpose-feet"
 FOOT_FLAGS = ["left_foot_readjust", "right_foot_readjust"]
+ARM_FLAGS = ["left_arm_bent", "right_arm_bent"]
+
+ARM_GRID = {
+    "bent_arm_deg": [110.0, 120.0, 130.0],
+    "bent_arm_min_s": [1.5, 2.0, 3.0],
+    "hand_still_speed": [None, 0.3, 0.5, 0.8],
+}
 
 GRID = {
     "foot_move_speed": [0.6, 0.8, 1.0, 1.2],
@@ -118,15 +129,17 @@ def _overlap(a0, a1, b0, b1, pad=0.2) -> bool:
 
 
 def evaluate(cfg: MetricConfig, labels: pd.DataFrame,
-             frames_by_clip: dict[str, pd.DataFrame]) -> dict:
-    """Run the foot rule with cfg on every clip; compare its flags with your labels."""
+             frames_by_clip: dict[str, pd.DataFrame], fcfg: FeedbackConfig | None = None,
+             flag_types: list[str] = FOOT_FLAGS) -> dict:
+    """Run the rules with cfg / fcfg on every clip; compare their flags with your labels."""
     kept = {"correct": 0, "wrong": 0}
+    not_mistake = 0
     unreviewed = 0
     for video_id, frames in frames_by_clip.items():
-        flags = feedback_flags(frames, cfg, FeedbackConfig())
+        flags = feedback_flags(frames, cfg, fcfg or FeedbackConfig())
         t0 = float(frames["timestamp_ms"].iloc[0]) / 1000 if len(frames) else 0.0
         events = flag_events(flags)
-        events = events[events["flag"].isin(FOOT_FLAGS)]
+        events = events[events["flag"].isin(flag_types)]
         mine = labels[labels["video_id"] == video_id]
         for e in events.itertuples(index=False):
             s, t = e.start_s + t0, e.end_s + t0
@@ -139,12 +152,15 @@ def evaluate(cfg: MetricConfig, labels: pd.DataFrame,
             if any(_overlap(r.start_s, r.end_s, a + t0, b + t0)
                    for a, b in zip(ev["start_s"], ev["end_s"])):
                 kept[r.verdict] = kept.get(r.verdict, 0) + 1
+                if r.verdict == "correct" and getattr(r, "mistake", "") == "no":
+                    not_mistake += 1
     total_correct = int((labels["verdict"] == "correct").sum())
     shown = kept["correct"] + kept["wrong"]
     return {
         "correct_kept": kept["correct"],
         "correct_total": total_correct,
         "wrong_shown": kept["wrong"],
+        "not_mistake_shown": not_mistake,
         "unreviewed": unreviewed,
         "precision": kept["correct"] / shown if shown else math.nan,
         "recall": kept["correct"] / total_correct if total_correct else math.nan,
@@ -168,6 +184,42 @@ def grid_search(base: MetricConfig, labels: pd.DataFrame,
     return df.sort_values(["f1", "precision"], ascending=False, ignore_index=True)
 
 
+def arm_grid_search(labels: pd.DataFrame, frames_by_clip: dict[str, pd.DataFrame],
+                    grid: dict = ARM_GRID) -> pd.DataFrame:
+    """Bent-arm settings vs your labels.
+
+    useful = shown flags that were detected right and not marked "not a mistake"
+    (lock-offs and relaxed arms are marked mistake = no). Higher useful_share = the
+    red arms you see are more often worth fixing.
+    """
+    rows = []
+    keys = list(grid)
+    base = FeedbackConfig()
+    for values in itertools.product(*grid.values()):
+        fcfg = replace(base, **dict(zip(keys, values)))
+        res = evaluate(MetricConfig(), labels, frames_by_clip, fcfg, ARM_FLAGS)
+        shown = res["correct_kept"] + res["wrong_shown"]
+        useful = res["correct_kept"] - res["not_mistake_shown"]
+        rows.append({**dict(zip(keys, values)), "shown": shown,
+                     "correct_kept": res["correct_kept"], "wrong_shown": res["wrong_shown"],
+                     "not_mistake_shown": res["not_mistake_shown"], "useful": useful,
+                     "useful_share": useful / shown if shown else math.nan,
+                     "unreviewed": res["unreviewed"]})
+    df = pd.DataFrame(rows)
+    is_current = np.logical_and.reduce(
+        [df[k].map(lambda v, k=k: (pd.isna(v) and getattr(base, k) is None) or v == getattr(base, k))
+         for k in keys])
+    df["current"] = np.where(is_current, "<- now", "")
+    return df.sort_values(["useful_share", "useful"], ascending=False, ignore_index=True)
+
+
+def split_clips(frames_by_clip: dict[str, pd.DataFrame]) -> tuple[dict, dict]:
+    overrides = load_overrides()
+    tune = {k: v for k, v in frames_by_clip.items() if split_of(k, overrides) == "tune"}
+    test = {k: v for k, v in frames_by_clip.items() if split_of(k, overrides) == "test"}
+    return tune, test
+
+
 # ---------------------------------------------------------------- command line
 
 def _load_frames(video_ids: list[str]) -> dict[str, pd.DataFrame]:
@@ -185,33 +237,45 @@ def main() -> None:
     parser.add_argument("--reviews", type=Path, default=REVIEW_PATH)
     parser.add_argument("--top", type=int, default=12)
     args = parser.parse_args()
-
-    labels, _ = clean_reviews(read_reviews(args.reviews))
-    labels = labels[labels["flag"].isin(FOOT_FLAGS) & labels["verdict"].isin(["correct", "wrong"])]
-    if labels.empty:
-        raise SystemExit("no reviewed foot flags (run python -m boulder.review.play first)")
-    frames_by_clip = _load_frames(sorted(labels["video_id"].unique()))
     pd.set_option("display.width", 200)
+    fmt = "{:.2f}".format
 
-    print(f"foot flags reviewed: {(labels['verdict'] == 'correct').sum()} correct, "
-          f"{(labels['verdict'] == 'wrong').sum()} wrong, over {len(frames_by_clip)} clips\n")
-    print("1. which motion measures separate correct from wrong flags")
-    feats = feature_table(labels, frames_by_clip)
-    print(feature_summary(feats).to_string(index=False, float_format="{:.2f}".format))
+    all_labels, _ = clean_reviews(read_reviews(args.reviews))
+    all_labels = all_labels[all_labels["verdict"].isin(["correct", "wrong"])]
+    frames_all = _load_frames(sorted(all_labels["video_id"].unique()))
+    tune, test = split_clips(frames_all)
+    print(f"clips: {len(tune)} tune, {len(test)} test ({', '.join(k[:22] for k in test) or 'none'})")
 
-    print(f"\n2. foot rule settings, best {args.top} (and the current one)")
-    table = grid_search(MetricConfig(), labels, frames_by_clip)
+    labels = all_labels[all_labels["flag"].isin(FOOT_FLAGS)]
+    tune_labels = labels[labels["video_id"].isin(tune)]
+    test_labels = labels[labels["video_id"].isin(test)]
+    print(f"\nFOOT READJUST: {(tune_labels['verdict'] == 'correct').sum()} correct, "
+          f"{(tune_labels['verdict'] == 'wrong').sum()} wrong on tune clips\n")
+    print("1. which motion measures separate correct from wrong flags (tune clips)")
+    print(feature_summary(feature_table(tune_labels, tune)).to_string(index=False,
+                                                                         float_format=fmt))
+    print(f"\n2. foot rule settings on tune clips, best {args.top} (and the current one)")
+    table = grid_search(MetricConfig(), tune_labels, tune)
     show = pd.concat([table.head(args.top), table[table["current"] != ""]]).drop_duplicates()
-    print(show.to_string(index=False, float_format="{:.2f}".format))
-
+    print(show.to_string(index=False, float_format=fmt))
     best = table.iloc[0]
     cfg = replace(MetricConfig(), **{k: best[k] for k in GRID})
-    print("\n3. best setting, clip by clip (a setting that only works on one clip is overfit)")
-    per_clip = [{"video_id": vid[:28], **evaluate(cfg, labels[labels["video_id"] == vid],
-                                                  {vid: frames_by_clip[vid]})}
-                for vid in frames_by_clip]
-    cols = ["video_id", "correct_kept", "correct_total", "wrong_shown", "unreviewed"]
-    print(pd.DataFrame(per_clip)[cols].to_string(index=False))
+    cols = ["correct_kept", "correct_total", "wrong_shown", "unreviewed", "precision"]
+    now_test = evaluate(MetricConfig(), test_labels, test)
+    best_test = evaluate(cfg, test_labels, test)
+    print("\n3. on the TEST clips (never tuned on): current vs best")
+    print(pd.DataFrame([{"setting": "current", **{c: now_test[c] for c in cols}},
+                        {"setting": "best", **{c: best_test[c] for c in cols}}]
+                       ).to_string(index=False, float_format=fmt))
+
+    arm = all_labels[all_labels["flag"].isin(ARM_FLAGS)]
+    arm_tune = arm[arm["video_id"].isin(tune)]
+    print(f"\nBENT ARM: {len(arm_tune)} reviewed flags on tune clips, "
+          f"{(arm_tune['mistake'] == 'no').sum()} marked not a mistake")
+    print(f"4. bent-arm settings on tune clips, best {args.top} (and the current one)")
+    atable = arm_grid_search(arm_tune, tune)
+    ashow = pd.concat([atable.head(args.top), atable[atable["current"] != ""]]).drop_duplicates()
+    print(ashow.to_string(index=False, float_format=fmt))
 
 
 if __name__ == "__main__":
