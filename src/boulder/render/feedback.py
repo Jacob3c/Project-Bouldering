@@ -24,6 +24,14 @@ What turns red (rules are first guesses, thresholds in FeedbackConfig):
     pause         hips still for pause_min_s (orange body). Tripod clips only: with a
                   moving camera hip speed is meaningless.
 
+Never judged:
+    blocked view  any flag that touches a frame where another person overlaps the climber
+                  (pose marks these frames "occluded"), padded by occlusion_pad_s.
+Overhang:
+    on a clip whose wall style or sections include overhang or roof (attempts log), bent
+    arms are flagged whatever the feet do: the angle keeps the arms loaded, so filters
+    that excuse a bent arm (hand_still_speed) are not applied.
+
 Outside the climb window (attempts log) the skeleton is grey. A timeline at the
 bottom shows every flagged moment, with a white cursor for the current frame.
 """
@@ -77,6 +85,7 @@ class FeedbackConfig:
     hand_still_speed: float | None = None  # TL/s; set = only flag while the hand is this still
                                            # (None = off until calibrated on your labels)
     flag_hold_s: float = 0.5      # keep a short flag (foot readjust) visible at least this long
+    occlusion_pad_s: float = 0.3  # drop flags this close to a frame where the view is blocked
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -110,9 +119,28 @@ def _extend(mask: np.ndarray, t: np.ndarray, min_s: float) -> np.ndarray:
     return out
 
 
+def _drop_runs_touching(mask: np.ndarray, blocked: np.ndarray) -> np.ndarray:
+    """Remove every True run of mask that overlaps a blocked frame."""
+    out = mask.copy()
+    for start, end in _runs(mask):
+        if blocked[start:end].any():
+            out[start:end] = False
+    return out
+
+
+def _padded(mask: np.ndarray, t: np.ndarray, pad_s: float) -> np.ndarray:
+    """Widen each True run by pad_s on both sides."""
+    out = mask.copy()
+    for start, end in _runs(mask):
+        lo = np.searchsorted(t, t[start] - pad_s, side="left")
+        hi = np.searchsorted(t, t[end - 1] + pad_s, side="right")
+        out[lo:hi] = True
+    return out
+
+
 def feedback_flags(frames: pd.DataFrame, cfg: MetricConfig | None = None,
-                   fcfg: FeedbackConfig | None = None, fixed_camera: bool = False
-                   ) -> pd.DataFrame:
+                   fcfg: FeedbackConfig | None = None, fixed_camera: bool = False,
+                   overhang: bool = False) -> pd.DataFrame:
     """One row per metric frame: frame_idx, t_s and a True/False column per flag."""
     cfg, fcfg = cfg or MetricConfig(), fcfg or FeedbackConfig()
     out = pd.DataFrame({"frame_idx": frames["frame_idx"].to_numpy(),
@@ -123,7 +151,7 @@ def feedback_flags(frames: pd.DataFrame, cfg: MetricConfig | None = None,
     for side in ("left", "right"):
         bent = (frames[f"{side}_elbow_deg"] < fcfg.bent_arm_deg).to_numpy()  # NaN -> False
         hand_col = f"{side}_hand_anchor_speed_tlps"
-        if fcfg.hand_still_speed is not None and hand_col in frames.columns:
+        if fcfg.hand_still_speed is not None and hand_col in frames.columns and not overhang:
             bent = bent & (frames[hand_col] < fcfg.hand_still_speed).to_numpy()  # NaN -> not still
         flag = np.zeros(n, dtype=bool)
         for start, end in _runs(bent):
@@ -142,6 +170,30 @@ def feedback_flags(frames: pd.DataFrame, cfg: MetricConfig | None = None,
         for start, end in pause_spans(frames, cfg):
             flag[start:end] = True
     out["pause"] = flag
+
+    if "occluded" in frames.columns and len(out):
+        blocked = _padded(frames["occluded"].fillna(False).to_numpy(dtype=bool), t,
+                          fcfg.occlusion_pad_s)
+        for name in FLAGS:
+            out[name] = _drop_runs_touching(out[name].to_numpy(dtype=bool), blocked)
+    return out
+
+
+OVERHANG_STYLES = {"overhang", "roof"}
+CLIPS_PATH = Path("data/clips.parquet")
+
+
+def overhang_clips(path: Path = CLIPS_PATH) -> set[str]:
+    """clip_ids whose wall style or sections (attempts log) include overhang or roof."""
+    if not path.exists():
+        return set()
+    clips = pd.read_parquet(path)
+    out = set()
+    for row in clips.to_dict("records"):
+        parts = {str(row.get("wall_style") or "")}
+        parts |= set(str(row.get("wall_sections") or "").split(">"))
+        if parts & OVERHANG_STYLES:
+            out.add(row["clip_id"])
     return out
 
 
@@ -324,7 +376,9 @@ def make_feedback(video_path: Path, model: str = "rtmpose-feet", conf: float = 0
     camera = parse_clip_name(video_path).camera
     cfg = _saved_config(_find(METRIC_ROOT / "attempts", model, stem))
     frames = pd.read_parquet(frames_path)
-    flags = feedback_flags(frames, cfg, fixed_camera=camera == "tripod")
+    clip_id = parse_clip_name(video_path).canonical_id or stem
+    flags = feedback_flags(frames, cfg, fixed_camera=camera == "tripod",
+                           overhang=clip_id in overhang_clips())
     # frames t_s starts at 0 at the window start; shift back to clip time
     clip_t0 = float(frames["timestamp_ms"].iloc[0]) / 1000 if len(frames) else 0.0
     events = flag_events(flags)

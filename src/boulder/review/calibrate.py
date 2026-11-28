@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from boulder.render.feedback import FeedbackConfig, feedback_flags, flag_events
+from boulder.render.feedback import FeedbackConfig, feedback_flags, flag_events, overhang_clips
 from boulder.transforms.metrics import MetricConfig, foot_move_spans
 
 from .flags import REVIEW_PATH, clean_reviews, read_reviews
@@ -135,8 +135,10 @@ def evaluate(cfg: MetricConfig, labels: pd.DataFrame,
     kept = {"correct": 0, "wrong": 0}
     not_mistake = 0
     unreviewed = 0
+    overhang = overhang_clips()
     for video_id, frames in frames_by_clip.items():
-        flags = feedback_flags(frames, cfg, fcfg or FeedbackConfig())
+        flags = feedback_flags(frames, cfg, fcfg or FeedbackConfig(),
+                               overhang=video_id in overhang)
         t0 = float(frames["timestamp_ms"].iloc[0]) / 1000 if len(frames) else 0.0
         events = flag_events(flags)
         events = events[events["flag"].isin(flag_types)]

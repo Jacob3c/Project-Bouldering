@@ -158,6 +158,11 @@ at the bottom marks every flagged moment, with a white cursor for the current fr
 | foot readjust (red leg) | a foot move (gap between the feet changing faster than 1.0 torso lengths/s) shorter than 0.3 torso lengths; shown for at least 0.5 s |
 | pause (orange body) | hips still for at least 1 s; tripod clips only |
 
+No flag is shown where the view is blocked: pose marks a frame `occluded` when another person
+overlaps the climber (a passer-by, a climber beside you), and any flag touching such a frame (padded
+by 0.3 s) is dropped. On overhang or roof clips (attempts log), bent arms are always flagged whatever
+the feet do, because the wall angle keeps the arms loaded.
+
 Run pose, quality and metrics first. Writes `data/output/<video_id>_feedback.mp4` and one row per
 flagged event to `data/processed/feedback/camera=<c>/model=<m>/<video_id>.parquet`, then prints the
 events with their clip times and the share of the climb that was red.

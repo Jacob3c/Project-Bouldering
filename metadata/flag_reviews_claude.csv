@@ -1,0 +1,29 @@
+video_id,flag,start,end,verdict,mistake,note,source,confidence
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:05.5,0:09.1,correct,,"both hands on hold above head, arms bent with weight; can't tell if needed",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:09.3,0:13.9,correct,no,"right hand on low side hold, bent, pushing while left reaches",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:11.5,0:12.0,correct,,"right foot leaves hold, hangs off wall",claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:13.1,0:13.6,correct,,"right foot swings in the air, not on a hold",claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_arm_bent,0:13.5,0:17.0,correct,no,lock off: pulls up on left arm to move up,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:13.5,0:14.0,wrong,,left foot stays on the orange hold,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:16.4,0:16.9,wrong,,camera blur; feet stay on hold,claude,high
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:17.8,0:25.0,correct,yes,"hangs a long time on bent arms, feet on a small hold below",claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:17.9,0:18.4,correct,,left foot shifts a little next to the orange hold,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:23.3,0:23.4,wrong,,person walks in front of the camera,claude,high
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:24.1,0:24.6,wrong,,passer-by in frame; feet stay on hold,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:24.2,0:24.7,wrong,,passer-by in frame; feet stay on hold,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:25.2,0:25.7,wrong,,"full high step up, not a small readjust",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:27.6,0:28.1,wrong,,camera blur; right foot stays on hold,claude,high
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:27.7,0:28.7,wrong,,camera blur; left foot stays on the wall,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:28.4,0:28.9,wrong,,camera blur; right foot stays on hold,claude,high
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:29.3,0:29.8,wrong,,camera blur; left foot stays put,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:30.4,0:31.5,wrong,,"big move out to the left, not a small readjust",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:30.5,0:33.2,correct,no,lock off on right hand while stemming wide,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_arm_bent,0:31.5,0:36.9,correct,no,"stemming in the corner, weight on feet (no load)",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:32.2,0:32.7,wrong,,"feet stemmed wide, right foot stays on hold",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_arm_bent,0:34.0,0:41.6,correct,no,"stemming, weight mostly on feet (no load)",claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:34.5,0:35.0,wrong,,left foot stays on the pink hold,claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:35.9,0:36.4,wrong,,"feet stemmed, right foot stays on hold",claude,medium
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:40.8,0:41.3,correct,,"right foot comes off the green hold, hangs",claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,right_foot_readjust,0:40.9,0:41.4,correct,,same moment as the flag above: right foot comes off,claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.1,0:41.6,correct,,left foot shifts as body moves up,claude,low
+2026-11-08_SouthSide_Orange-V5-6_att01_send_handheld,left_foot_readjust,0:41.9,0:42.0,unsure,,feet leave the wall right before jumping off,claude,low

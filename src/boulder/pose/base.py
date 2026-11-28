@@ -16,6 +16,9 @@ Output schema (one row per frame per keypoint):
     x_norm, y_norm float  position as a fraction of image width / height (0-1)
     confidence     float  model's own score; NOT comparable across models
     img_w, img_h   int    frame size in pixels
+    occluded       bool   another person overlaps the climber in this frame (e.g. a
+                          passer-by in front of the camera); always False for backends
+                          that see only one person
 """
 
 from __future__ import annotations
@@ -39,6 +42,7 @@ SCHEMA_COLUMNS = [
     "confidence",
     "img_w",
     "img_h",
+    "occluded",
 ]
 
 # The 17 COCO joints. Both models output these, under these exact names,
@@ -77,6 +81,8 @@ class PoseBackend(ABC):
 
     #: short name stored in the `model_name` column
     name: str = "base"
+    #: set by process_frame: did another person overlap the climber in that frame?
+    occluded: bool = False
 
     @property
     @abstractmethod

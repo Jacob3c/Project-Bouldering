@@ -144,3 +144,26 @@ def test_hand_still_filter_skips_reaching_arm():
     assert _flags(still, fcfg=cfg)["left_arm_bent"].any()
     assert not _flags(reach, fcfg=cfg)["left_arm_bent"].any()
     assert _flags(reach)["left_arm_bent"].any()      # filter off by default
+
+
+def test_blocked_view_hides_flags():
+    seq = [_skeleton(bent=True) for _ in range(3 * FPS)]
+    kp = _keypoints(seq)
+    assert _flags(seq)["left_arm_bent"].any()
+    kp["occluded"] = kp["frame_idx"].between(40, 45)   # a passer-by for 0.2 s
+    flags = feedback_flags(frame_metrics(kp))
+    assert not flags["left_arm_bent"].any()           # the whole bent-arm stretch is not judged
+
+
+def test_overhang_ignores_hand_still_filter():
+    from boulder.render.feedback import FeedbackConfig
+
+    reach = []
+    for k in range(3 * FPS):
+        f = _skeleton(bent=True)
+        f["left_wrist"] = (f["left_wrist"][0], f["left_wrist"][1] - 3 * k)
+        f["left_elbow"] = (f["left_elbow"][0], f["left_elbow"][1] - 3 * k)
+        reach.append(f)
+    cfg = FeedbackConfig(hand_still_speed=0.3)
+    assert not _flags(reach, fcfg=cfg)["left_arm_bent"].any()
+    assert _flags(reach, fcfg=cfg, overhang=True)["left_arm_bent"].any()
