@@ -64,6 +64,7 @@ def extract_keypoints(video_path: Path, backend: PoseBackend, stride: int = 1) -
                     rows.append((
                         video_id, backend.name, backend.version, frame_idx, ts, kp.name,
                         kp.x_px, kp.y_px, kp.x_px / w, kp.y_px / h, kp.confidence, w, h,
+                        bool(getattr(backend, "occluded", False)),
                     ))
             frame_idx += 1
     finally:

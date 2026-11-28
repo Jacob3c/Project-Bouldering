@@ -145,12 +145,18 @@ def frame_metrics(keypoints: pd.DataFrame, cfg: MetricConfig | None = None) -> p
     torso = np.linalg.norm(sh_mid - hip_mid, axis=1)
     scale = float(np.nanmedian(torso)) if np.isfinite(torso).any() else np.nan
 
+    if "occluded" in keypoints.columns:  # another person overlapped the climber (pose backend)
+        occ = keypoints.groupby("frame_idx")["occluded"].any()
+        occluded = occ.reindex(wide["frame_idx"]).fillna(False).astype(bool).to_numpy()
+    else:
+        occluded = np.zeros(len(wide), dtype=bool)
     out = pd.DataFrame({
         "frame_idx": wide["frame_idx"],
         "timestamp_ms": wide["timestamp_ms"],
         "t_s": t_s - t_s[0],
         "body_scale_px": scale,
         "torso_px": torso,
+        "occluded": occluded,
     })
     for side in ("left", "right"):
         out[f"{side}_elbow_deg"] = joint_angle(

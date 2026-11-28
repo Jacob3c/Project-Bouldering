@@ -170,3 +170,11 @@ def test_foot_dominance_needs_one_foot_clearly_faster():
     loose, strict = MetricConfig(foot_dominance=1.0), MetricConfig(foot_dominance=2.0)
     assert attempt_metrics(frame_metrics(kp, loose), loose)["left_foot_moves"] == 1
     assert attempt_metrics(frame_metrics(kp, strict), strict)["foot_moves"] == 0
+
+
+def test_occluded_frames_carried_to_metrics():
+    kp = _keypoints([_skeleton() for _ in range(10)])
+    kp["occluded"] = kp["frame_idx"] == 3
+    frames = frame_metrics(kp)
+    assert frames["occluded"].tolist() == [i == 3 for i in range(10)]
+    assert not frame_metrics(_keypoints([_skeleton() for _ in range(5)]))["occluded"].any()

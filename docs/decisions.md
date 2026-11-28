@@ -126,3 +126,8 @@ Short entries: what was decided, why, and what else was considered.
 - **CI:** a GitHub Actions workflow runs `pytest` on every PR (`docs/ci-tests.yml`, to be moved to `.github/workflows/`).
 - **Next:** re-run metrics (new columns), calibrate, pick `hand_still_speed` if it raises the share of useful arm flags on the test clips.
 
+## 2026-11-27 - Don't judge blocked frames; overhangs always load the arms
+- **Blocked view:** the RTMPose backend now records `occluded` per frame (another person's box covers 15% or more of the climber's box). Metrics carry it; feedback drops any flag that touches a blocked frame (padded 0.3 s). Why: a passer-by hid the feet in SouthSide V5-6 and those flags were guesses; the rule is "don't flag what you can't see". Needs a pose rerun to fill the new column; older keypoint files simply have no blocked frames.
+- **Overhang:** on clips whose `wall_style` or `wall_sections` include overhang or roof, bent arms are flagged regardless of the feet, and filters that excuse a bent arm (`hand_still_speed`) are skipped. Why (from my coaching knowledge): on an overhang the wall angle keeps the arms loaded even with good feet. Sections have no times, so any overhang section counts for the whole clip.
+- **Labelling rules learned in the review test:** a foot off the wall is not a readjust; bent arms that only reposition the body with the weight on the feet are "no load" (vertical walls).
+

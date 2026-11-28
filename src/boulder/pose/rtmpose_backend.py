@@ -4,6 +4,8 @@
 - Finds EVERY person; we follow the climber from frame to frame (the biggest person
   in the first frame, then whoever is nearest the climber's last position and of a
   similar size), so a passer-by walking in front of the camera is not picked up
+- Marks a frame "occluded" when another person overlaps the climber, so later steps
+  can skip judging what they can't see
 - "body" = 17 COCO joints; "body_with_feet" = 26 joints incl. big toe, small toe, heel
 - Model files download automatically on first use
 """
@@ -33,6 +35,7 @@ HALPE26 = COCO17 + [
 TRACK_MAX_JUMP = 1.0         # climber moves at most this many body sizes between processed frames
 TRACK_MAX_SIZE_RATIO = 1.8   # a person this much bigger/smaller is someone else (e.g. a passer-by)
 TRACK_RESET_FRAMES = 30      # after this many frames with no match, start again from the biggest
+OCCLUSION_SHARE = 0.15       # another person covering this share of the climber's box = blocked view
 
 
 def pick_main_person(keypoints: np.ndarray, scores: np.ndarray) -> int | None:
@@ -89,6 +92,41 @@ def pick_tracked_person(keypoints: np.ndarray, scores: np.ndarray,
     return best
 
 
+def person_box(kps: np.ndarray, sc: np.ndarray,
+               min_score: float = 0.3) -> tuple[float, float, float, float] | None:
+    """(x0, y0, x1, y1) around one skeleton's confident joints, or None."""
+    good = kps[sc > min_score]
+    if len(good) < 2:
+        return None
+    (x0, y0), (x1, y1) = good.min(axis=0), good.max(axis=0)
+    return float(x0), float(y0), float(x1), float(y1)
+
+
+def other_person_overlaps(keypoints: np.ndarray, scores: np.ndarray, idx: int,
+                          min_share: float = OCCLUSION_SHARE) -> bool:
+    """True when anyone else's box covers at least min_share of the climber's box.
+
+    A passer-by in front of the camera (or another climber right beside you) can hide
+    hands or feet; frames like that are flagged so the feedback does not judge them.
+    """
+    me = person_box(keypoints[idx], scores[idx])
+    if me is None:
+        return False
+    mx0, my0, mx1, my1 = me
+    area = max((mx1 - mx0) * (my1 - my0), 1e-9)
+    for j, (kps, sc) in enumerate(zip(keypoints, scores)):
+        if j == idx:
+            continue
+        other = person_box(kps, sc)
+        if other is None:
+            continue
+        ox0, oy0, ox1, oy1 = other
+        inter = max(0.0, min(mx1, ox1) - max(mx0, ox0)) * max(0.0, min(my1, oy1) - max(my0, oy0))
+        if inter / area >= min_share:
+            return True
+    return False
+
+
 class RTMPoseBackend(PoseBackend):
     name = "rtmpose"
 
@@ -111,6 +149,7 @@ class RTMPoseBackend(PoseBackend):
         """Forget the climber's position (start of a new video)."""
         self._prev_center, self._prev_size = None, None
         self._misses, self._last_ts = 0, None
+        self.occluded = False
 
     @property
     def version(self) -> str:
@@ -126,6 +165,7 @@ class RTMPoseBackend(PoseBackend):
         self._last_ts = timestamp_ms
         keypoints, scores = self._model(frame_bgr)  # rtmlib takes OpenCV BGR directly
         idx = pick_tracked_person(keypoints, scores, self._prev_center, self._prev_size)
+        self.occluded = idx is not None and other_person_overlaps(keypoints, scores, idx)
         if idx is None:
             self._misses += 1
             if self._misses >= TRACK_RESET_FRAMES:
